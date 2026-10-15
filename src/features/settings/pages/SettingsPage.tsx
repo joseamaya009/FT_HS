@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
@@ -8,12 +8,24 @@ import { Label } from '@shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/ui/tabs';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@shared/ui/alert-dialog';
+import {
   Camera,
   BellRing,
   Download,
   Eye,
   EyeOff,
   FileText,
+  Headphones,
   Loader2,
   LogOut,
   Mail,
@@ -145,10 +157,17 @@ const emptyProfile: ProfileForm = {
   avatarDataUrl: null,
 };
 
+const SupportTickets = lazy(() =>
+  import('@features/support/pages/SupportPage').then(({ SupportTickets: component }) => ({
+    default: component,
+  }))
+);
+
 export function AccountSettings({ roles, homeId }: AccountSettingsProps) {
   const { t, i18n } = useTranslation();
   const { refreshSession, logout } = useAuth();
   const primaryRole = getPrimaryRole(roles);
+  const isAdministrator = primaryRole === 'Administrator';
   const roleLabel = t(roleTranslationKey(primaryRole));
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -471,14 +490,43 @@ export function AccountSettings({ roles, homeId }: AccountSettingsProps) {
         </CardContent>
       </Card>
 
+      <Card className="sm:hidden">
+        <CardContent className="space-y-3 pt-4">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button type="button" variant="ghost" className="w-full justify-start text-red-600">
+                <LogOut className="mr-2 size-4" aria-hidden="true" />
+                {t('auth.logout')}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t('auth.logout')}?</AlertDialogTitle>
+                <AlertDialogDescription>{t('common.logoutConfirmation')}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => void logout()}>
+                  {t('auth.logout')}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="!grid !w-full grid-cols-2 mobile-equal-tabs sm:!grid sm:grid-cols-3 lg:grid-cols-6">
+        <TabsList className="settings-tabs-carousel w-full">
           <TabsTrigger value="profile">{t('settings.profile')}</TabsTrigger>
           <TabsTrigger value="security">{t('settings.security')}</TabsTrigger>
           <TabsTrigger value="privacy">{t('settings.privacy')}</TabsTrigger>
           <TabsTrigger value="preferences">{t('settings.preferences')}</TabsTrigger>
           <TabsTrigger value="notifications">{t('notifications.title')}</TabsTrigger>
           <TabsTrigger value="account">{t('settings.accountTab')}</TabsTrigger>
+          <TabsTrigger value="support">
+            <Headphones className="size-4" aria-hidden="true" />
+            {t(isAdministrator ? 'nav.supportPanel' : 'nav.support')}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -1125,6 +1173,19 @@ export function AccountSettings({ roles, homeId }: AccountSettingsProps) {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="support">
+          <Suspense
+            fallback={
+              <div className="flex items-center gap-2 p-4 text-sm text-gray-600" role="status">
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                {t('common.loading')}
+              </div>
+            }
+          >
+            <SupportTickets management={isAdministrator} />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </div>
