@@ -1,5 +1,13 @@
 node_modules/
 dist/
+.web-dist/
+android/
+.expo/
+.expo-export-check*/
+.gradle-user-home/
+coverage/
+*.hprof
+hs_err_pid*.log
 .git/
 .env*
 *.log

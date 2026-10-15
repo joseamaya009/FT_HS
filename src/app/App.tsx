@@ -96,7 +96,6 @@ function RegisterRoute() {
           state: { registrationPending: true, registeredEmail: result.email },
         });
       }}
-      onBack={() => navigate('/login')}
       initialFormData={state.draft || null}
       initialLegalAccepted={Boolean(state.legalAccepted)}
       onReviewTerms={(draft) => navigate('/privacy', { state: { draft } })}

@@ -16,10 +16,16 @@ import {
 import {
   Activity,
   Bluetooth,
+  CircleHelp,
+  Clock3,
+  Cpu,
   Droplets,
+  Gauge,
   History,
   Loader2,
+  MapPin,
   RefreshCw,
+  Settings2,
   Trash2,
   Wifi,
   WifiOff,
@@ -253,15 +259,18 @@ export function DeviceManagement({
 
   const linkExisting = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       const response = await devicesApi.link({
         homeId,
-        hardwareId: String(form.get('hardwareId') || '').trim(),
+        code: String(form.get('code') || '')
+          .trim()
+          .toUpperCase(),
       });
       toast.success(t('devices.deviceLinked'));
       setLinkOpen(false);
-      event.currentTarget.reset();
+      formElement.reset();
       setPage(1);
       await loadDevices(homeId, 1);
       const linkedDevice = { ...(response.data as Device), homeId };
@@ -424,7 +433,6 @@ export function DeviceManagement({
         mqttHost: env.mqttDeviceHost,
         mqttPort: env.mqttDevicePort,
         deviceCode: provisioningDevice.code,
-        disableBleAfterProvisioning: false,
       });
       setBleState('wifi_connecting');
       toast.success(t('devices.bleConfigurationSent'));
@@ -502,6 +510,8 @@ export function DeviceManagement({
   };
 
   const online = devices.filter((device) => device.connectivityStatus === 'ONLINE').length;
+  const offline = devices.filter((device) => device.connectivityStatus === 'OFFLINE').length;
+  const otherStatus = Math.max(devices.length - online - offline, 0);
   const currentPage = pagination.page || page;
   const totalPages = pagination.totalPages || 0;
   const isFirstPage = currentPage <= 1;
@@ -572,15 +582,19 @@ export function DeviceManagement({
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <p className="text-sm text-gray-600">{t('devices.linkNewSensor')}</p>
-                    <Input
-                      name="hardwareId"
-                      placeholder={t('devices.hardwareIdPlaceholder')}
-                      pattern="[A-Za-z0-9_-]{3,32}"
-                      title={t('devices.hardwareIdFormatHelp')}
-                      required
-                      autoCapitalize="characters"
-                      autoComplete="off"
-                    />
+                    <div className="space-y-2">
+                      <Label htmlFor="device-code">{t('devices.deviceId')}</Label>
+                      <Input
+                        id="device-code"
+                        name="code"
+                        placeholder={t('devices.deviceCodePlaceholder')}
+                        pattern="[A-Za-z0-9_-]{3,32}"
+                        title={t('devices.deviceCodeFormatHelp')}
+                        required
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                      />
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button type="submit">{t('devices.linkDevice')}</Button>
@@ -592,23 +606,41 @@ export function DeviceManagement({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <Card>
+      <div className="iot-device-stats grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <Card className="iot-stat-card iot-stat-total">
           <CardHeader>
+            <div className="iot-stat-icon">
+              <Droplets aria-hidden="true" />
+            </div>
             <CardDescription>{t('devices.total')}</CardDescription>
             <CardTitle>{pagination.total}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="iot-stat-card iot-stat-online">
           <CardHeader>
+            <div className="iot-stat-icon">
+              <Wifi aria-hidden="true" />
+            </div>
             <CardDescription>{t('devices.online')}</CardDescription>
-            <CardTitle className="text-green-600">{online}</CardTitle>
+            <CardTitle>{online}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="iot-stat-card iot-stat-offline">
           <CardHeader>
+            <div className="iot-stat-icon">
+              <WifiOff aria-hidden="true" />
+            </div>
             <CardDescription>{t('devices.offline')}</CardDescription>
-            <CardTitle className="text-red-600">{Math.max(devices.length - online, 0)}</CardTitle>
+            <CardTitle>{offline}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="iot-stat-card iot-stat-other">
+          <CardHeader>
+            <div className="iot-stat-icon">
+              <CircleHelp aria-hidden="true" />
+            </div>
+            <CardDescription>{t('devices.otherStates')}</CardDescription>
+            <CardTitle>{otherStatus}</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -628,71 +660,101 @@ export function DeviceManagement({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="iot-device-grid grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {devices.length ? (
               devices.map((device) => {
                 const connectivity = String(device.connectivityStatus || 'UNKNOWN').toUpperCase();
+                const connectivityKey = [
+                  'ONLINE',
+                  'OFFLINE',
+                  'DEGRADED',
+                  'ERROR',
+                  'UNKNOWN',
+                ].includes(connectivity)
+                  ? connectivity.toLowerCase()
+                  : 'unknown';
                 const isOnline = connectivity === 'ONLINE';
                 const isOffline = connectivity === 'OFFLINE';
+                const isDegraded = connectivity === 'DEGRADED';
+                const statusClass = isOnline
+                  ? 'is-online'
+                  : isOffline
+                    ? 'is-offline'
+                    : isDegraded
+                      ? 'is-degraded'
+                      : connectivity === 'ERROR'
+                        ? 'is-error'
+                        : 'is-unknown';
                 const deviceActuators = actuatorStates.filter(
                   (state) => state.deviceId === device.deviceId
                 );
                 return (
                   <Card
                     key={device.deviceId}
-                    className="overflow-hidden border-slate-200 shadow-sm transition-shadow hover:shadow-md"
+                    className={`iot-device-card ${statusClass} overflow-hidden border-slate-200 shadow-sm transition-shadow hover:shadow-md`}
                   >
-                    <CardHeader className="space-y-4 pb-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+                    <CardHeader className="iot-device-card-header space-y-4 pb-4">
+                      <div className="iot-device-card-heading flex items-start justify-between gap-3">
+                        <div className="iot-device-identity flex min-w-0 items-center gap-3">
+                          <div className="iot-device-icon flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50">
                             <Droplets className="size-5 text-blue-600" />
                           </div>
                           <div className="min-w-0">
                             <CardTitle className="truncate text-base">{device.name}</CardTitle>
-                            <CardDescription className="mt-1 truncate font-mono text-xs">
+                            <CardDescription className="iot-device-code mt-1 truncate font-mono text-xs">
                               {device.code} {device.type ? `· ${device.type}` : ''}
                             </CardDescription>
                           </div>
                         </div>
                         <Badge
-                          className="shrink-0"
-                          variant={isOnline ? 'default' : isOffline ? 'destructive' : 'outline'}
+                          className={`iot-connectivity-badge ${statusClass} shrink-0`}
+                          variant="outline"
                         >
                           {isOnline ? (
                             <Wifi className="mr-1 size-3" />
-                          ) : (
+                          ) : isOffline ? (
                             <WifiOff className="mr-1 size-3" />
+                          ) : (
+                            <CircleHelp className="mr-1 size-3" />
                           )}
-                          {t(`devices.connectivity.${connectivity.toLowerCase()}`)}
+                          {t(`devices.connectivity.${connectivityKey}`)}
                         </Badge>
                       </div>
-                      <div className="grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-slate-500">{t('devices.location')}</span>
+                      <div className="iot-device-meta grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs">
+                        <div className="iot-device-meta-row flex items-center justify-between gap-3">
+                          <span className="iot-device-meta-label">
+                            <MapPin aria-hidden="true" />
+                            {t('devices.location')}
+                          </span>
                           <span className="max-w-[65%] truncate text-right font-medium text-slate-800">
                             {device.location || '—'}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-slate-500">{t('devices.hardwareId')}</span>
+                        <div className="iot-device-meta-row flex items-center justify-between gap-3">
+                          <span className="iot-device-meta-label">
+                            <Cpu aria-hidden="true" />
+                            {t('devices.hardwareId')}
+                          </span>
                           <span
-                            className="max-w-[65%] truncate text-right font-mono text-[11px] text-slate-700"
+                            className="iot-device-meta-value max-w-[65%] truncate text-right font-mono text-[11px] text-slate-700"
                             title={device.hardwareId || undefined}
                           >
                             {device.hardwareId || '—'}
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between gap-3 text-xs">
-                        <span className="text-slate-500">{t('devices.lastConnection')}</span>
+                      <div className="iot-device-last-seen flex items-center justify-between gap-3 text-xs">
+                        <span className="iot-device-meta-label">
+                          <Clock3 aria-hidden="true" />
+                          {t('devices.lastConnection')}
+                        </span>
                         <span className="text-right font-medium text-slate-700">
                           {device.lastConnectionAt
                             ? new Date(device.lastConnectionAt).toLocaleString(dateLocale)
                             : '—'}
                         </span>
                       </div>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="iot-provisioning-row flex flex-wrap items-center justify-between gap-2">
                         <span className="text-xs text-slate-500">
                           {t('devices.provisioningStatus')}
                         </span>
@@ -705,21 +767,22 @@ export function DeviceManagement({
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4 border-t border-slate-100 pt-4">
-                      <div className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm">
-                        <span className="text-amber-800">{t('devices.alertThreshold')}</span>
-                        <strong className="text-amber-950">
-                          {device.alertThreshold ?? '—'} m³/hora
-                        </strong>
+                    <CardContent className="iot-device-card-content space-y-4 border-t border-slate-100 pt-4">
+                      <div className="iot-alert-threshold flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm">
+                        <span>
+                          <Gauge aria-hidden="true" />
+                          {t('devices.alertThreshold')}
+                        </span>
+                        <strong>{device.alertThreshold ?? '—'} m³/hora</strong>
                       </div>
                       {device.latestTelemetry ? (
-                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-                          <div className="grid grid-cols-2 divide-x divide-slate-200 text-sm">
+                        <div className="iot-telemetry-card overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                          <div className="iot-telemetry-metrics grid grid-cols-2 divide-x divide-slate-200 text-sm">
                             <div className="p-3">
                               <span className="block text-xs text-slate-500">
                                 {t('devices.currentFlow')}
                               </span>
-                              <strong className="mt-1 flex items-center gap-1 text-slate-900">
+                              <strong className="iot-telemetry-value mt-1 flex items-center gap-1 text-slate-900">
                                 <Activity className="size-3 text-blue-600" />
                                 {device.latestTelemetry.flowRateLpm?.toFixed(2) ?? '—'} L/min
                               </strong>
@@ -728,12 +791,12 @@ export function DeviceManagement({
                               <span className="block text-xs text-slate-500">
                                 {t('devices.totalVolume')}
                               </span>
-                              <strong className="mt-1 text-slate-900">
+                              <strong className="iot-telemetry-value mt-1 text-slate-900">
                                 {device.latestTelemetry.totalLiters?.toFixed(2) ?? '—'} L
                               </strong>
                             </div>
                           </div>
-                          <div className="grid grid-cols-[1fr_auto] gap-3 border-t border-slate-200 bg-white px-3 py-2 text-xs">
+                          <div className="iot-telemetry-footer grid grid-cols-[1fr_auto] gap-3 border-t border-slate-200 bg-white px-3 py-2 text-xs">
                             <div className="min-w-0">
                               <span className="block text-slate-500">
                                 {t('devices.lastReading')}
@@ -753,12 +816,13 @@ export function DeviceManagement({
                           </div>
                         </div>
                       ) : (
-                        <p className="rounded-lg border border-dashed bg-slate-50 p-4 text-center text-xs text-gray-500">
-                          {t('devices.noTelemetryYet')}
-                        </p>
+                        <div className="iot-no-telemetry rounded-lg border border-dashed bg-slate-50 p-4 text-center text-xs text-gray-500">
+                          <Activity aria-hidden="true" />
+                          <span>{t('devices.noTelemetryYet')}</span>
+                        </div>
                       )}
                       {deviceActuators.length > 0 && (
-                        <div className="space-y-2 rounded-lg border border-blue-100 bg-blue-50/60 p-3">
+                        <div className="iot-actuators-panel space-y-2 rounded-lg border border-blue-100 bg-blue-50/60 p-3">
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-sm font-medium text-blue-950">
                               {t('devices.actuators')}
@@ -798,7 +862,7 @@ export function DeviceManagement({
                           })}
                         </div>
                       )}
-                      <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                      <div className="iot-device-actions flex flex-wrap gap-2 border-t border-slate-100 pt-4">
                         {canManageAssignedDevice && (
                           <Button
                             className="flex-1"
@@ -806,6 +870,7 @@ export function DeviceManagement({
                             size="sm"
                             onClick={() => openProvisioning(device)}
                           >
+                            <Settings2 className="mr-2 size-4" />
                             {t('devices.configure')}
                           </Button>
                         )}
@@ -819,7 +884,12 @@ export function DeviceManagement({
                           {t('devices.viewHistory')}
                         </Button>
                         {canUnlinkDevice && (
-                          <Button variant="outline" size="sm" onClick={() => void unlink(device)}>
+                          <Button
+                            className="iot-device-action-unlink"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void unlink(device)}
+                          >
                             <Trash2 className="size-4" />
                             <span className="ml-2">{t('devices.unlinkDevice')}</span>
                           </Button>
@@ -1095,14 +1165,14 @@ export function DeviceManagement({
                   </table>
                 </div>
                 {historyPagination.totalPages > 1 && (
-                  <div className="flex items-center justify-between gap-3 pt-2">
-                    <span className="text-sm text-gray-600">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <span className="min-w-0 text-sm text-gray-600">
                       {t('devices.pageOf', {
                         page: historyPagination.page,
                         totalPages: historyPagination.totalPages,
                       })}
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex shrink-0 gap-2">
                       <Button
                         variant="outline"
                         disabled={historyPage <= 1 || historyLoading}

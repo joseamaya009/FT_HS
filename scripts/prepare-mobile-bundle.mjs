@@ -85,7 +85,23 @@ assertPathExists(webRoot, 'Proyecto web');
 // teléfono físico intentaría llamar a localhost en lugar del equipo de
 // desarrollo. La variable de entorno del proceso tiene prioridad para CI.
 const mobileApiUrl = process.env.EXPO_PUBLIC_API_URL || readEnvValue('EXPO_PUBLIC_API_URL');
-const buildEnv = mobileApiUrl ? { ...process.env, VITE_API_URL: mobileApiUrl } : process.env;
+if (mobileApiUrl) {
+  try {
+    const hostname = new URL(mobileApiUrl).hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+      console.warn(
+        '[HidroSmart móvil] EXPO_PUBLIC_API_URL usa localhost. Un teléfono físico no podrá alcanzar esa API; usa un dominio HTTPS o un nombre/IP accesible de la LAN.'
+      );
+    }
+  } catch {
+    console.warn('[HidroSmart móvil] EXPO_PUBLIC_API_URL no es una URL válida.');
+  }
+}
+const buildEnv = {
+  ...process.env,
+  HIDROSMART_MOBILE_BUNDLE: 'true',
+  ...(mobileApiUrl ? { VITE_API_URL: mobileApiUrl } : {}),
+};
 
 if (process.platform === 'win32') {
   execFileSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', `npm run build -- --outDir .web-dist --emptyOutDir`], {

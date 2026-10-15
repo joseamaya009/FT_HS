@@ -2,11 +2,9 @@ import { env } from '../config/env';
 
 const API_BASE_URL = env.apiBaseUrl;
 
-const ACCESS_TOKEN_KEY = 'hidrosmart_access_token';
-const REFRESH_TOKEN_KEY = 'hidrosmart_refresh_token';
-const SESSION_ID_KEY = 'hidrosmart_session_id';
 export const SESSION_EXPIRED_EVENT = 'hidrosmart:session-expired';
-let refreshPromise: Promise<string> | null = null;
+const CSRF_COOKIE_NAME = 'hidrosmart_csrf';
+let refreshPromise: Promise<void> | null = null;
 
 type ApiOptions = RequestInit & { skipAuth?: boolean; responseType?: 'json' | 'blob' };
 
@@ -39,29 +37,38 @@ export class ApiError extends Error {
 }
 
 export const sessionTokens = {
+  // Compatibilidad temporal para componentes antiguos. Las credenciales no se
+  // leen ni escriben en JavaScript: la sesion vive en cookies HttpOnly.
   get accessToken() {
-    return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    return readCookie(CSRF_COOKIE_NAME);
   },
   get refreshToken() {
-    return sessionStorage.getItem(REFRESH_TOKEN_KEY);
+    return readCookie(CSRF_COOKIE_NAME);
   },
   get sessionId() {
-    return sessionStorage.getItem(SESSION_ID_KEY);
+    return null;
   },
-  save(data: { accessToken?: string; refreshToken?: string; sessionId?: string }) {
-    if (data.accessToken) sessionStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
-    if (data.refreshToken) sessionStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
-    if (data.sessionId) sessionStorage.setItem(SESSION_ID_KEY, data.sessionId);
-  },
+  save(_data: { accessToken?: string; refreshToken?: string; sessionId?: string }) {},
   clear() {
-    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-    sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-    sessionStorage.removeItem(SESSION_ID_KEY);
+    // Elimina restos de versiones previas que guardaban tokens en sessionStorage.
+    sessionStorage.removeItem('hidrosmart_access_token');
+    sessionStorage.removeItem('hidrosmart_refresh_token');
+    sessionStorage.removeItem('hidrosmart_session_id');
     sessionStorage.removeItem('hidrosmart_session');
     sessionStorage.removeItem('hidrosmart_refresh');
     sessionStorage.removeItem('hidrosmart_role');
   },
 };
+
+function readCookie(name: string) {
+  const prefix = `${encodeURIComponent(name)}=`;
+  const entry = document.cookie.split('; ').find((candidate) => candidate.startsWith(prefix));
+  return entry ? decodeURIComponent(entry.slice(prefix.length)) : null;
+}
+
+function isUnsafeMethod(method?: string) {
+  return ['POST', 'PUT', 'PATCH', 'DELETE'].includes((method || 'GET').toUpperCase());
+}
 
 async function parseResponse(response: Response) {
   const text = await response.text();
@@ -73,23 +80,11 @@ async function parseResponse(response: Response) {
   }
 }
 
-async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = sessionTokens.refreshToken;
-  if (!refreshToken) return null;
+async function refreshAccessToken(): Promise<void> {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
-    const refreshed = await request<{ data: { accessToken: string; refreshToken?: string } }>(
-      '/auth/refresh',
-      {
-        method: 'POST',
-        skipAuth: true,
-        body: JSON.stringify({ refreshToken }),
-      },
-      false
-    );
-    sessionTokens.save(refreshed.data);
-    return refreshed.data.accessToken;
+    await request('/auth/refresh', { method: 'POST', skipAuth: true }, false);
   })().finally(() => {
     refreshPromise = null;
   });
@@ -103,8 +98,9 @@ async function request<T>(path: string, options: ApiOptions = {}, retry = true):
   if (body && !requestHeaders.has('Content-Type'))
     requestHeaders.set('Content-Type', 'application/json');
 
-  if (!skipAuth && sessionTokens.accessToken) {
-    requestHeaders.set('Authorization', `Bearer ${sessionTokens.accessToken}`);
+  if (isUnsafeMethod(requestOptions.method) && !requestHeaders.has('X-CSRF-Token')) {
+    const csrfToken = readCookie(CSRF_COOKIE_NAME);
+    if (csrfToken) requestHeaders.set('X-CSRF-Token', csrfToken);
   }
 
   let response: Response;
@@ -113,6 +109,7 @@ async function request<T>(path: string, options: ApiOptions = {}, retry = true):
       ...requestOptions,
       body,
       headers: requestHeaders,
+      credentials: 'include',
     });
   } catch (error) {
     const message =
@@ -122,7 +119,7 @@ async function request<T>(path: string, options: ApiOptions = {}, retry = true):
     throw new ApiError(message, 0, error);
   }
 
-  if (response.status === 401 && retry && sessionTokens.refreshToken) {
+  if (response.status === 401 && retry && path !== '/auth/refresh') {
     try {
       await refreshAccessToken();
       return request<T>(path, options, false);
@@ -179,7 +176,7 @@ export const apiClient = {
 export const authApi = {
   login: (login: string, password: string) =>
     apiClient.post<{
-      data: { userId: string; sessionId: string; accessToken: string; refreshToken: string };
+      data: { userId: string; sessionId: string; refreshExpiresAt: string };
     }>('/auth/login', { login, password }, { skipAuth: true }),
   register: (payload: {
     username: string;
@@ -196,13 +193,13 @@ export const authApi = {
     apiClient.post<{
       data: { message: string; email: string };
     }>('/auth/register', payload, { skipAuth: true }),
-  refresh: (refreshToken: string) =>
-    apiClient.post<{ data: { sessionId: string; accessToken: string; refreshToken?: string } }>(
+  refresh: () =>
+    apiClient.post<{ data: { sessionId: string; refreshExpiresAt: string } }>(
       '/auth/refresh',
-      { refreshToken },
+      undefined,
       { skipAuth: true }
     ),
-  logout: (refreshToken: string) => apiClient.post<void>('/auth/logout', { refreshToken }),
+  logout: () => apiClient.post<void>('/auth/logout'),
   requestPasswordReset: (email: string) =>
     apiClient.post<{ data: { message: string } }>(
       '/auth/request-password-reset',
