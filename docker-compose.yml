@@ -1,0 +1,15 @@
+name: hidro_smart_frontend
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:?Set_VITE_API_URL_to_the_public_backend_API}
+        VITE_MQTT_DEVICE_HOST: ${VITE_MQTT_DEVICE_HOST:?Set_VITE_MQTT_DEVICE_HOST_to_the_DNS_name_reachable_by_ESP32}
+        VITE_MQTT_DEVICE_PORT: ${VITE_MQTT_DEVICE_PORT:-1883}
+        NGINX_CONFIG: nginx.standalone.conf
+    ports:
+      - '${FRONTEND_PORT:-5173}:80'
+    restart: unless-stopped
