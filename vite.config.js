@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isEmbeddedMobileBuild = process.env.HIDROSMART_MOBILE_BUNDLE === 'true';
 
 function figmaAssetResolver() {
   return {
@@ -16,6 +17,32 @@ function figmaAssetResolver() {
       }
     },
   };
+}
+
+function manualChunks(id) {
+  const moduleId = id.replace(/\\/g, '/');
+
+  if (!moduleId.includes('/node_modules/')) return;
+
+  if (moduleId.includes('/recharts/')) return 'charts';
+  if (moduleId.includes('/@radix-ui/')) return 'radix-ui';
+  if (
+    moduleId.includes('/@mui/') ||
+    moduleId.includes('/@emotion/') ||
+    moduleId.includes('/@floating-ui/')
+  ) {
+    return 'ui-vendor';
+  }
+  if (moduleId.includes('/i18next/') || moduleId.includes('/react-i18next/')) return 'i18n';
+  if (
+    moduleId.includes('/react/') ||
+    moduleId.includes('/react-dom/') ||
+    moduleId.includes('/react-router') ||
+    moduleId.includes('/scheduler/')
+  ) {
+    return 'react-vendor';
+  }
+  if (moduleId.includes('/lucide-react/')) return 'icons';
 }
 
 export default defineConfig({
@@ -33,5 +60,14 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     open: false,
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        ...(isEmbeddedMobileBuild
+          ? { inlineDynamicImports: true }
+          : { manualChunks }),
+      },
+    },
   },
 });

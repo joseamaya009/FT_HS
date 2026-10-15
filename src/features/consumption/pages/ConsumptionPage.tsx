@@ -1,16 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, CalendarDays, Droplets, RefreshCw } from 'lucide-react';
+import { Activity, CalendarDays, Droplets, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 import { Button } from '@shared/ui/button';
-import {
-  consumptionApi,
-  type ConsumptionSeriesPoint,
-  type ConsumptionSummary,
-  type HourlyConsumption,
-} from '@shared/http/apiClient';
-import { DailyConsumptionChart } from '@features/consumption/charts/DailyConsumptionChart';
+import { consumptionApi, type ConsumptionSummary } from '@shared/http/apiClient';
 import { WeeklyConsumptionChart } from '@features/consumption/charts/WeeklyConsumptionChart';
 import { formatCurrency } from '@shared/i18n/locale';
 import { useAuth } from '@app/providers/AuthProvider';
@@ -22,23 +16,11 @@ function query(params: Record<string, string>) {
   return new URLSearchParams(params).toString();
 }
 
-function mapHourlySeries(points: ConsumptionSeriesPoint[], homeId: string): HourlyConsumption[] {
-  return points.map((point) => ({
-    homeId,
-    hour: point.bucketHour ?? Number(point.groupKey),
-    averageConsumptionM3: point.consumptionM3,
-    averageConsumptionLiters: point.consumptionLiters,
-    sampleCount: point.readingCount,
-    refreshedAt: null,
-  }));
-}
-
 export function ConsumptionPage({ homeId }: { homeId?: string }) {
   const { t, i18n } = useTranslation();
   const { session } = useAuth();
   const [selectedDate, setSelectedDate] = useState(localDate(new Date()));
   const [summary, setSummary] = useState<ConsumptionSummary | null>(null);
-  const [hourly, setHourly] = useState<HourlyConsumption[]>([]);
   const [weekly, setWeekly] = useState<DailyPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -64,18 +46,14 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
         date.setDate(date.getDate() - (6 - index));
         return date;
       });
-      const [summaryResponse, hourlyResponse, dailyResponse] = await Promise.all([
+      const [summaryResponse, dailyResponse] = await Promise.all([
         consumptionApi.summary(query({ homeId, from: range.from, to: range.to })),
-        consumptionApi.advanced(
-          query({ homeId, from: range.from, to: range.to, groupBy: 'hourly' })
-        ),
         consumptionApi.advanced(
           query({ homeId, from: range.from, to: range.to, groupBy: 'daily' })
         ),
       ]);
       if (viewKeyRef.current !== requestKey) return;
       setSummary(summaryResponse.data);
-      setHourly(mapHourlySeries(hourlyResponse.data.points || [], homeId));
       const dailyByDate = new Map(
         (dailyResponse.data.points || []).map((point) => [
           point.bucketDate ? point.bucketDate.slice(0, 10) : point.groupKey,
@@ -91,7 +69,6 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
     } catch (loadError) {
       if (!silent && viewKeyRef.current === requestKey) {
         setSummary(null);
-        setHourly([]);
         setWeekly([]);
         setError(true);
         toast.error(loadError instanceof Error ? loadError.message : t('consumption.loadError'));
@@ -125,22 +102,30 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
   const totalLiters = Number(summary?.totalLiters || 0);
   const readingCount = Number(summary?.readingCount || 0);
   const cost = summary?.totalCost;
+  const resetDate = () => {
+    const today = localDate(new Date());
+    if (selectedDate === today) {
+      void load();
+      return;
+    }
+    setSelectedDate(today);
+  };
 
   return (
-    <div className="min-w-0 space-y-6">
+    <div className="mobile-consumption-page min-w-0 space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">{t('consumption.title')}</h2>
           <p className="text-gray-600">{t('consumption.subtitle')}</p>
         </div>
-        <div className="flex items-end gap-2">
-          <label className="grid gap-1 text-sm text-gray-700">
+        <div className="flex w-full items-end gap-2 sm:w-auto">
+          <label className="grid min-w-0 flex-1 gap-1 text-sm text-gray-700 sm:w-56 sm:flex-none">
             <span className="flex items-center gap-1">
               <CalendarDays className="size-4" />
               {t('consumption.endDate')}
             </span>
             <input
-              className="h-10 rounded-md border px-3"
+              className="h-11 w-full rounded-md border bg-background px-3"
               type="date"
               value={selectedDate}
               max={localDate(new Date())}
@@ -150,11 +135,12 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => void load()}
-            disabled={loading}
-            aria-label={t('consumption.refresh')}
+            className="consumption-reset-button shrink-0 self-end"
+            onClick={resetDate}
+            aria-label={t('common.reset')}
           >
-            <RefreshCw className={loading ? 'size-4 animate-spin' : 'size-4'} />
+            <RotateCcw className="size-4" aria-hidden="true" />
+            <span>{t('common.reset')}</span>
           </Button>
         </div>
       </div>
@@ -165,7 +151,7 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mobile-consumption-metrics grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         <Card>
           <CardHeader>
             <CardDescription>{t('consumption.periodTotal')}</CardDescription>
@@ -175,7 +161,7 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
             <Droplets className="size-5 text-blue-600" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="consumption-secondary-metric">
           <CardHeader>
             <CardDescription>{t('consumption.liters')}</CardDescription>
             <CardTitle>{loading ? '—' : `${totalLiters.toFixed(1)} L`}</CardTitle>
@@ -184,7 +170,7 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
             <Droplets className="size-5 text-cyan-600" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="consumption-secondary-metric">
           <CardHeader>
             <CardDescription>{t('consumption.readings')}</CardDescription>
             <CardTitle>{loading ? '—' : readingCount}</CardTitle>
@@ -208,20 +194,7 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('consumption.hourlyTitle')}</CardTitle>
-            <CardDescription>{t('consumption.hourlyDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[290px]">
-            {hourly.length ? (
-              <DailyConsumptionChart points={hourly} />
-            ) : (
-              <p className="py-8 text-sm text-gray-500">{t('consumption.noData')}</p>
-            )}
-          </CardContent>
-        </Card>
+      <div className="mobile-consumption-charts grid grid-cols-1 gap-4 sm:gap-6">
         <Card>
           <CardHeader>
             <CardTitle>{t('consumption.dailyTitle')}</CardTitle>

@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { authApi, SESSION_EXPIRED_EVENT, sessionTokens, userApi } from '@shared/http/apiClient';
+import { authApi, SESSION_EXPIRED_EVENT, userApi } from '@shared/http/apiClient';
 import {
   can as hasPermission,
   normalizePermissions,
@@ -66,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation();
 
   const clearLocalSession = useCallback(() => {
-    sessionTokens.clear();
     queryClient.clear();
     setSession(null);
   }, [queryClient]);
@@ -76,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = response.data as Partial<AuthSession>;
     const nextSession: AuthSession = {
       ...data,
-      sessionId: sessionTokens.sessionId || data.sessionId,
+      sessionId: data.sessionId,
       roles: normalizeRoles(data.roles),
       permissions: normalizePermissions(data.permissions),
     };
@@ -89,8 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async ({ login: identifier, password }: LoginCredentials) => {
-      const response = await authApi.login(identifier, password);
-      sessionTokens.save(response.data);
+      await authApi.login(identifier, password);
       return refreshSession();
     },
     [refreshSession]
@@ -102,17 +100,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const restoreFromRefreshToken = useCallback(async () => {
-    const refreshToken = sessionTokens.refreshToken;
-    if (!refreshToken) throw new Error('No hay un refresh token disponible');
-    const refreshed = await authApi.refresh(refreshToken);
-    sessionTokens.save(refreshed.data);
+    await authApi.refresh();
     return refreshSession();
   }, [refreshSession]);
 
   const logout = useCallback(async () => {
-    const refreshToken = sessionTokens.refreshToken;
     try {
-      if (refreshToken) await authApi.logout(refreshToken);
+      await authApi.logout();
     } catch {
       // La sesión puede haber sido revocada desde otro dispositivo; en ambos
       // casos la salida local debe completarse y no dejar tokens reutilizables.
@@ -125,16 +119,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
     const initialize = async () => {
       try {
-        if (sessionTokens.accessToken) {
+        try {
           try {
             await refreshSession();
           } catch (error) {
             // Un access token vencido no debe cerrar la sesión si el refresh
             // token sigue vigente. El cliente HTTP también usa este mismo flujo.
-            if (!sessionTokens.refreshToken) throw error;
-            await restoreFromRefreshToken();
+            throw error;
           }
-        } else if (sessionTokens.refreshToken) {
+        } catch {
           await restoreFromRefreshToken();
         }
       } catch {
