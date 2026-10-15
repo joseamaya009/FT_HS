@@ -15,13 +15,16 @@ import {
 import { Badge } from '@shared/ui/badge';
 import {
   Building2,
+  Check,
   ChevronLeft,
   ChevronRight,
   Loader2,
+  MapPin,
   Plus,
   RefreshCw,
   Settings2,
   UserPlus,
+  Users,
 } from 'lucide-react';
 import { homesApi } from '@shared/http/httpClient';
 import { toast } from 'sonner';
@@ -83,12 +86,21 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
   const [editHomeForm, setEditHomeForm] = useState<HomeForm>(emptyHomeForm);
   const [memberOpen, setMemberOpen] = useState(false);
   const homesCarouselRef = useRef<HTMLDivElement>(null);
+  const selectedHomeIdRef = useRef<string | null>(null);
 
   const scrollHomes = (direction: 'previous' | 'next') => {
     homesCarouselRef.current?.scrollBy({
       left: (direction === 'next' ? 1 : -1) * homesCarouselRef.current.clientWidth * 0.85,
       behavior: 'smooth',
     });
+  };
+
+  const selectHome = (home: Home) => {
+    selectedHomeIdRef.current = home.homeId;
+    setMembers([]);
+    setMembersError(null);
+    setMembersLoading(true);
+    setSelectedHome(home);
   };
 
   const load = async () => {
@@ -120,20 +132,25 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
     setMembersError(null);
     try {
       const { data } = await homesApi.members(homeId);
-      setMembers(data as Member[]);
+      if (selectedHomeIdRef.current === homeId) setMembers(data as Member[]);
     } catch (error) {
       const message = error instanceof Error ? error.message : t('homes.membersLoadError');
-      setMembersError(message);
-      setMembers([]);
+      if (selectedHomeIdRef.current === homeId) {
+        setMembersError(message);
+        setMembers([]);
+      }
     } finally {
-      setMembersLoading(false);
+      if (selectedHomeIdRef.current === homeId) setMembersLoading(false);
     }
   };
 
   useEffect(() => {
     if (selectedHome) {
+      selectedHomeIdRef.current = selectedHome.homeId;
       void loadMembers(selectedHome.homeId);
     } else {
+      selectedHomeIdRef.current = null;
+      setMembersLoading(false);
       setMembers([]);
       setMembersError(null);
     }
@@ -141,7 +158,8 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
 
   const create = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const peopleCountValue = String(form.get('peopleCount') || '').trim();
     const peopleCount = Number(peopleCountValue);
     if (!/^\d+$/.test(peopleCountValue) || !Number.isInteger(peopleCount)) {
@@ -165,7 +183,7 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
       setNewHomeOpen(false);
       setNewHomeUsageType('RESIDENTIAL');
       setNewHomePeopleCount('3');
-      event.currentTarget.reset();
+      formElement.reset();
       await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('homes.createError'));
@@ -175,9 +193,11 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
   const addMember = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedHome) return;
-    const form = new FormData(event.currentTarget);
+    const targetHomeId = selectedHome.homeId;
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
-      const result = await homesApi.addMember(selectedHome.homeId, {
+      const result = await homesApi.addMember(targetHomeId, {
         email: String(form.get('email')),
         homeRole: String(form.get('role')) as 'Owner' | 'Member' | 'Guest',
       });
@@ -189,8 +209,8 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
         toast.success(t('homes.memberAdded'));
       }
       setMemberOpen(false);
-      event.currentTarget.reset();
-      await loadMembers(selectedHome.homeId);
+      formElement.reset();
+      if (selectedHomeIdRef.current === targetHomeId) await loadMembers(targetHomeId);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('homes.addMemberError'));
     }
@@ -252,11 +272,11 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl">{t('homes.title')}</h2>
-          <p className="text-gray-600">{t('homes.subtitle')}</p>
+    <div className="mobile-homes-page space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-semibold">{t('homes.title')}</h2>
+          <p className="text-sm text-gray-600 sm:text-base">{t('homes.subtitle')}</p>
         </div>
         {canManage && (
           <Dialog
@@ -268,7 +288,7 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
             }}
           >
             <DialogTrigger asChild>
-              <Button disabled={loading}>
+              <Button className="w-full sm:w-auto" disabled={loading}>
                 <Plus className="mr-2 size-4" />
                 {t('homes.registerNewHome')}
               </Button>
@@ -500,12 +520,12 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
       )}
 
       {loading ? (
-        <div className="flex min-h-40 items-center justify-center rounded-lg border bg-white text-sm text-gray-600">
+        <div className="flex min-h-32 items-center justify-center rounded-lg border bg-white text-sm text-gray-600 sm:min-h-40">
           <Loader2 className="mr-2 size-5 animate-spin" />
           {t('common.loading')}
         </div>
       ) : loadError ? (
-        <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+        <div className="flex min-h-32 flex-col items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-center sm:min-h-40 sm:p-6">
           <p className="text-sm text-red-700">{loadError}</p>
           <Button variant="outline" onClick={() => void load()}>
             <RefreshCw className="mr-2 size-4" />
@@ -513,71 +533,96 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
           </Button>
         </div>
       ) : homes.length ? (
-        <div className="space-y-2">
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => scrollHomes('previous')}
-              disabled={homes.length < 2}
-              aria-label={t('homes.previousHome')}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => scrollHomes('next')}
-              disabled={homes.length < 2}
-              aria-label={t('homes.nextHome')}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
+        <div className="space-y-3">
+          {homes.length > 1 && (
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => scrollHomes('previous')}
+                aria-label={t('homes.previousHome')}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => scrollHomes('next')}
+                aria-label={t('homes.nextHome')}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          )}
           <div
             ref={homesCarouselRef}
-            className="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-3 [scrollbar-width:thin]"
+            className="homes-carousel flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:thin] sm:gap-6"
             aria-label={t('homes.title')}
           >
             {homes.map((home) => (
               <Card
                 key={home.homeId}
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelectedHome(home)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') setSelectedHome(home);
-                }}
-                className={`w-[calc(100%-0.5rem)] shrink-0 snap-start sm:w-[calc(50%-0.75rem)] ${
-                  selectedHome?.homeId === home.homeId ? 'border-blue-600' : ''
-                }`}
+                className={`home-selection-card w-[88%] max-w-sm shrink-0 snap-start overflow-hidden sm:w-[calc(50%-0.75rem)] ${
+                  selectedHome?.homeId === home.homeId
+                    ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-600'
+                    : 'border-gray-200'
+                } ${selectedHome?.homeId === home.homeId ? 'is-selected' : ''}`}
               >
-                <CardHeader>
-                  <CardTitle>
-                    <Building2 className="mr-2 inline size-5 text-blue-600" />
-                    {home.name}
+                <CardHeader
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={selectedHome?.homeId === home.homeId}
+                  onClick={() => selectHome(home)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      selectHome(home);
+                    }
+                  }}
+                  className="cursor-pointer rounded-t-xl p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-inset sm:p-6"
+                >
+                  <CardTitle className="flex min-w-0 items-center gap-2 break-words text-lg leading-6">
+                    <Building2 className="size-5 shrink-0 text-blue-600" />
+                    <span className="min-w-0 flex-1">{home.name}</span>
+                    {selectedHome?.homeId === home.homeId && (
+                      <Check className="size-5 shrink-0 text-blue-700" aria-hidden="true" />
+                    )}
                   </CardTitle>
-                  <CardDescription>
-                    {home.address} · {home.city}
+                  <CardDescription className="flex items-start gap-1.5 break-words leading-5">
+                    <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                    <span>
+                      {home.address} · {home.city}
+                    </span>
                   </CardDescription>
-                  <CardDescription>
-                    {t('homes.peopleCount')}: {home.peopleCount ?? 3}
+                  <CardDescription className="flex items-center gap-1.5 leading-5">
+                    <Users className="size-4 shrink-0" aria-hidden="true" />
+                    <span>
+                      {t('homes.peopleCount')}: {home.peopleCount ?? 3}
+                    </span>
                   </CardDescription>
-                  <CardDescription>
-                    {home.usageType === 'COMMERCIAL'
-                      ? t('homes.usageTypeCommercial')
-                      : home.usageType === 'INDUSTRIAL'
-                        ? t('homes.usageTypeIndustrial')
-                        : `${t('homes.usageTypeResidential')} · ${t('homes.stratum')} ${home.tier ?? '—'}`}
+                  <CardDescription className="flex items-start gap-1.5 break-words leading-5">
+                    <Building2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                    <span>
+                      {home.usageType === 'COMMERCIAL'
+                        ? t('homes.usageTypeCommercial')
+                        : home.usageType === 'INDUSTRIAL'
+                          ? t('homes.usageTypeIndustrial')
+                          : `${t('homes.usageTypeResidential')} · ${t('homes.stratum')} ${home.tier ?? '—'}`}
+                    </span>
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-wrap items-center justify-between gap-2">
+                <CardContent className="homes-card-actions flex items-center justify-between gap-2 px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
                   <Badge>{home.status || t('homes.active')}</Badge>
                   <div className="flex flex-wrap gap-2">
                     {canManage && (
-                      <Button variant="outline" size="sm" onClick={() => openEditHome(home)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => openEditHome(home)}
+                      >
                         <Settings2 className="mr-2 size-4" />
                         {t('homes.edit')}
                       </Button>
@@ -589,25 +634,26 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-dashed p-8 text-center">
-          <p className="text-sm text-gray-600">{t('homes.noHomes')}</p>
+        <div className="flex flex-col items-center rounded-xl border border-dashed p-5 text-center sm:p-8">
+          <Building2 className="mb-3 size-8 text-blue-600" aria-hidden="true" />
+          <p className="text-sm font-medium text-gray-700">{t('homes.noHomes')}</p>
           <p className="mt-2 text-sm text-gray-500">{t('homes.createFirst')}</p>
         </div>
       )}
 
-      <Card>
+      <Card className="homes-members-card overflow-hidden">
         <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <CardTitle>{t('homes.homeMembers')}</CardTitle>
-              <CardDescription>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <CardTitle className="text-lg">{t('homes.homeMembers')}</CardTitle>
+              <CardDescription className="break-words">
                 {selectedHome?.name || t('homes.selectHomeForMembers')}
               </CardDescription>
             </div>
             {selectedHome && canManage && (
               <Dialog open={memberOpen} onOpenChange={setMemberOpen}>
                 <DialogTrigger asChild>
-                  <Button disabled={membersLoading}>
+                  <Button className="w-full sm:w-auto" disabled={membersLoading}>
                     <UserPlus className="mr-2 size-4" />
                     {t('homes.addMember')}
                   </Button>
@@ -671,14 +717,19 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
                 return (
                   <div
                     key={member.userId}
-                    className="flex items-center justify-between rounded-lg border p-3"
+                    className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div>
-                      <p className="font-medium">
+                    <div className="min-w-0">
+                      <p className="break-words font-medium">
                         {member.fullName || member.username || t('homes.memberWithoutName')}
                       </p>
                     </div>
-                    <Badge variant={role === 'Owner' ? 'default' : 'outline'}>{roleLabel}</Badge>
+                    <Badge
+                      className="self-start sm:self-auto"
+                      variant={role === 'Owner' ? 'default' : 'outline'}
+                    >
+                      {roleLabel}
+                    </Badge>
                   </div>
                 );
               })}

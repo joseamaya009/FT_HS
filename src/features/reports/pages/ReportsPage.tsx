@@ -87,7 +87,7 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
     if (!selectedHomeId) return;
     const now = new Date();
     const from = localDate(new Date(now.getFullYear(), now.getMonth(), 1));
-    const sixMonthFrom = localDate(new Date(now.getFullYear(), now.getMonth() - 5, 1));
+    const threeMonthFrom = localDate(new Date(now.getFullYear(), now.getMonth() - 2, 1));
     const to = localDate(now);
     setLoading(true);
     Promise.all([
@@ -99,7 +99,7 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
         .advanced(
           new URLSearchParams({
             homeId: selectedHomeId,
-            from: sixMonthFrom,
+            from: threeMonthFrom,
             to,
             groupBy: 'monthly',
           }).toString()
@@ -118,8 +118,8 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
         const monthlyByKey = new Map(
           monthlyPoints.map((point) => [point.bucketDate || point.groupKey, point])
         );
-        const realMonthly = Array.from({ length: 6 }, (_, index) => {
-          const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+        const realMonthly = Array.from({ length: 3 }, (_, index) => {
+          const date = new Date(now.getFullYear(), now.getMonth() - (2 - index), 1);
           const key = localDate(date);
           const point = monthlyByKey.get(key);
           return {
@@ -164,7 +164,6 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
   }, [historyRefresh, selectedHomeId, t]);
 
   const currentM3 = Number(summary.totalM3 || 0);
-  const currentCost = Number(summary.totalCost || 0);
   const rate = Number(tariff?.m3Value || 0);
   const selectedHome = useMemo(
     () => homes.find((home) => home.id === selectedHomeId),
@@ -221,15 +220,15 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mobile-reports-page space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl text-gray-900">{t('reports.title')}</h2>
           <p className="text-gray-600">{t('reports.subtitle')}</p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex w-full flex-col gap-2 sm:w-auto">
           <select
-            className="h-10 rounded-md border px-3"
+            className="h-10 w-full rounded-md border px-3 sm:w-auto sm:min-w-56"
             value={selectedHomeId}
             onChange={(event) => setSelectedHomeId(event.target.value)}
             aria-label={t('homes.home')}
@@ -241,24 +240,6 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
               </option>
             ))}
           </select>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void downloadReport('pdf')}
-            disabled={!selectedHomeId || downloading !== null}
-          >
-            <Download aria-hidden="true" />
-            {downloading === 'pdf' ? t('reports.downloadingPdf') : t('reports.downloadPdf')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void downloadReport('excel')}
-            disabled={!selectedHomeId || downloading !== null}
-          >
-            <Download aria-hidden="true" />
-            {downloading === 'excel' ? t('reports.downloadingExcel') : t('reports.downloadExcel')}
-          </Button>
         </div>
       </div>
 
@@ -267,12 +248,34 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
           <CardTitle>{t('reports.title')}</CardTitle>
           <CardDescription>{selectedHome?.name || t('homes.home')}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <p className="text-sm text-gray-600">{t('reports.dataSourceNotice')}</p>
+          <div className="mobile-report-actions grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => void downloadReport('pdf')}
+              disabled={!selectedHomeId || downloading !== null}
+            >
+              <Download aria-hidden="true" />
+              {downloading === 'pdf' ? t('reports.downloadingPdf') : t('reports.downloadPdf')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => void downloadReport('excel')}
+              disabled={!selectedHomeId || downloading !== null}
+            >
+              <Download aria-hidden="true" />
+              {downloading === 'excel' ? t('reports.downloadingExcel') : t('reports.downloadExcel')}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardDescription>{t('reports.currentConsumption')}</CardDescription>
@@ -282,19 +285,6 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
             <p className="text-sm text-gray-600">
               {summary.readingCount || 0} {t('reports.readings')}
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>{t('reports.monthProjection')}</CardDescription>
-            <CardTitle>
-              {currentCost
-                ? formatCurrency(currentCost, i18n.language, session?.preferences?.currency)
-                : '—'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">{t('reports.backendCalculated')}</p>
           </CardContent>
         </Card>
         <Card>
@@ -336,11 +326,13 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
         </CardHeader>
         <CardContent>
           {monthly.length ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+            <div className="mobile-inline-grid grid grid-cols-3 gap-2 sm:gap-3">
               {monthly.map((item) => (
                 <div key={item.month} className="rounded-lg border p-3 text-center">
                   <div className="text-sm text-gray-600">{item.month}</div>
-                  <div className="mt-1 text-xl">{(item.liters / 1000).toFixed(2)} m³</div>
+                  <div className="mt-1 text-base sm:text-xl">
+                    {(item.liters / 1000).toFixed(2)} m³
+                  </div>
                 </div>
               ))}
             </div>

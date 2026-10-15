@@ -1,4 +1,3 @@
-import { BleManager, State } from 'react-native-ble-plx';
 import { PermissionsAndroid, Platform } from 'react-native';
 import { decode, encode } from 'base-64';
 
@@ -8,9 +7,31 @@ export const STATUS_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a9';
 
 class BleProvisioningService {
   constructor() {
-    this.manager = new BleManager();
+    // Expo Go does not include react-native-ble-plx. Load it only when BLE is used.
+    this.manager = null;
+    this.managerPromise = null;
+    this.BleState = null;
     this.device = null;
     this.monitorSubscription = null;
+  }
+
+  async getManager() {
+    if (this.manager) return this.manager;
+    if (!this.managerPromise) {
+      this.managerPromise = import('react-native-ble-plx')
+        .then(({ BleManager, State }) => {
+          this.BleState = State;
+          this.manager = new BleManager();
+          return this.manager;
+        })
+        .catch(() => {
+          this.managerPromise = null;
+          throw new Error(
+            'Bluetooth del ESP32 no está disponible en Expo Go. Usa una compilación de desarrollo de HidroSmart para aprovisionar por BLE.'
+          );
+        });
+    }
+    return this.managerPromise;
   }
 
   async requestPermissions() {
@@ -36,24 +57,27 @@ class BleProvisioningService {
   }
 
   async ensureBluetooth() {
-    const state = await this.manager.state();
-    if (state !== State.PoweredOn) {
+    const manager = await this.getManager();
+    const state = await manager.state();
+    if (state !== this.BleState.PoweredOn) {
       throw new Error('Activa el Bluetooth del teléfono.');
     }
     return true;
   }
 
   async scan(onResult) {
+    const manager = await this.getManager();
     if (!(await this.requestPermissions())) {
       throw new Error('HidroSmart necesita permiso de Bluetooth.');
     }
     await this.ensureBluetooth();
-    this.manager.stopDeviceScan();
+    manager.stopDeviceScan();
     // Escaneamos sin filtro de UUID porque algunos adaptadores no exponen el
     // servicio anunciado por el ESP32 hasta después de conectarse. Luego
     // filtramos por el nombre oficial del dispositivo.
-    this.manager.startDeviceScan(null, null, (error, device) => {
+    manager.startDeviceScan(null, null, (error, device) => {
       if (error) {
+        manager.stopDeviceScan();
         onResult({ type: 'error', message: error.message });
         return;
       }
@@ -69,49 +93,63 @@ class BleProvisioningService {
   }
 
   stopScan() {
-    this.manager.stopDeviceScan();
+    this.manager?.stopDeviceScan();
   }
 
   async connect(deviceId, onStatus) {
+    if (!deviceId) throw new Error('No se recibió el identificador del ESP32.');
     this.stopScan();
-    let device = await this.manager.connectToDevice(deviceId, { autoConnect: false });
-    device = await device.discoverAllServicesAndCharacteristics();
-
-    if (Platform.OS === 'android') {
-      try {
-        device = await device.requestMTU(185);
-      } catch {
-        // La conexión sigue siendo válida aunque el MTU no cambie.
-      }
-    }
-
+    const manager = await this.getManager();
+    let device = await manager.connectToDevice(deviceId, { autoConnect: false });
     this.device = device;
 
     try {
-      const characteristic = await device.readCharacteristicForService(SERVICE_UUID, STATUS_UUID);
-      if (characteristic.value) onStatus(this.parseStatus(decode(characteristic.value)));
-    } catch (error) {
-      onStatus({ state: 'ble_read_error', message: error.message });
-    }
+      device = await device.discoverAllServicesAndCharacteristics();
 
-    this.monitorSubscription = device.monitorCharacteristicForService(
-      SERVICE_UUID,
-      STATUS_UUID,
-      (error, characteristic) => {
-        if (error) {
-          onStatus({ state: 'ble_error', message: error.message });
-          return;
-        }
-        if (characteristic?.value) {
-          onStatus(this.parseStatus(decode(characteristic.value)));
+      if (Platform.OS === 'android') {
+        try {
+          device = await device.requestMTU(185);
+        } catch {
+          // La conexión sigue siendo válida aunque el MTU no cambie.
         }
       }
-    );
 
-    return {
-      id: device.id,
-      name: device.name || device.localName || 'HidroSmart',
-    };
+      this.device = device;
+
+      try {
+        const characteristic = await device.readCharacteristicForService(SERVICE_UUID, STATUS_UUID);
+        if (characteristic.value) onStatus(this.parseStatus(decode(characteristic.value)));
+      } catch (error) {
+        onStatus({ state: 'ble_read_error', message: error.message });
+      }
+
+      this.monitorSubscription = device.monitorCharacteristicForService(
+        SERVICE_UUID,
+        STATUS_UUID,
+        (error, characteristic) => {
+          if (error) {
+            onStatus({ state: 'ble_error', message: error.message });
+            return;
+          }
+          if (characteristic?.value) {
+            onStatus(this.parseStatus(decode(characteristic.value)));
+          }
+        }
+      );
+
+      return {
+        id: device.id,
+        name: device.name || device.localName || 'HidroSmart',
+      };
+    } catch (error) {
+      try {
+        await device.cancelConnection();
+      } catch {
+        // La conexión pudo cerrarse al fallar el descubrimiento GATT.
+      }
+      if (this.device?.id === device.id) this.device = null;
+      throw error;
+    }
   }
 
   parseStatus(message) {
@@ -131,7 +169,6 @@ class BleProvisioningService {
       mqttHost,
       mqttPort,
       ...(deviceCode ? { deviceCode } : {}),
-      disableBleAfterProvisioning: false,
     });
     await this.device.writeCharacteristicWithResponseForService(
       SERVICE_UUID,
@@ -156,7 +193,9 @@ class BleProvisioningService {
   destroy() {
     this.monitorSubscription?.remove();
     this.monitorSubscription = null;
-    this.manager.destroy();
+    this.manager?.destroy();
+    this.manager = null;
+    this.managerPromise = null;
   }
 }
 

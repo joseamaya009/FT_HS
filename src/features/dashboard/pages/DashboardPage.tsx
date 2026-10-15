@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Wifi,
   WifiOff,
+  CircleHelp,
   Battery,
   Activity,
   ArrowRight,
@@ -16,6 +17,7 @@ import {
 import { DailyConsumptionChart } from '@features/consumption/charts/DailyConsumptionChart';
 import { WeeklyConsumptionChart } from '@features/consumption/charts/WeeklyConsumptionChart';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { alertsApi, consumptionApi, devicesApi } from '@shared/http/httpClient';
 import type { AlertEvent, DeviceTelemetry } from '@shared/http/httpClient';
@@ -50,6 +52,7 @@ async function optionalDashboardRequest<T>(request: Promise<T>, label: string): 
 // RF14 - Monitoreo en tiempo real
 export function DashboardHome({ homeId }: DashboardHomeProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [currentConsumption, setCurrentConsumption] = useState({
     today: 0,
     week: 0,
@@ -303,7 +306,11 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
               devicesWithTelemetry.map((device) => ({
                 id: device.deviceId,
                 name: device.name,
-                status: device.connectivityStatus === 'ONLINE' ? 'online' : 'offline',
+                status: ['online', 'offline', 'degraded', 'error', 'unknown'].includes(
+                  String(device.connectivityStatus || 'unknown').toLowerCase()
+                )
+                  ? String(device.connectivityStatus || 'unknown').toLowerCase()
+                  : 'unknown',
                 lastConnectionAt: device.lastConnectionAt,
                 currentFlowLpm: device.latestTelemetry?.flowRateLpm ?? null,
               }))
@@ -376,12 +383,20 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
   };
 
   return (
-    <div className="min-w-0 space-y-7 lg:space-y-8">
+    <div className="mobile-dashboard min-w-0 space-y-5 sm:space-y-7 lg:space-y-8">
       {/* RNF2.2 - Tarjetas de resumen con información clara */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="pb-3">
-            <CardDescription>{t('dashboard.todayConsumption')}</CardDescription>
+            <CardDescription>
+              <button
+                type="button"
+                className="dashboard-card-link"
+                onClick={() => navigate('/app/consumption')}
+              >
+                {t('dashboard.todayConsumption')}
+              </button>
+            </CardDescription>
             <CardTitle className="text-2xl lg:text-3xl">
               <MetricValue value={currentConsumption.today} />
             </CardTitle>
@@ -391,7 +406,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hidden hover:shadow-lg transition-shadow sm:block">
           <CardHeader className="pb-3">
             <CardDescription>{t('dashboard.weekConsumption')}</CardDescription>
             <CardTitle className="text-2xl lg:text-3xl">
@@ -403,7 +418,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hidden hover:shadow-lg transition-shadow sm:block">
           <CardHeader className="pb-3">
             <CardDescription>{t('dashboard.monthConsumption')}</CardDescription>
             <CardTitle className="text-2xl lg:text-3xl">
@@ -419,7 +434,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hidden hover:shadow-lg transition-shadow sm:block">
           <CardHeader className="pb-3">
             <CardDescription>{t('dashboard.currentFlow')}</CardDescription>
             <CardTitle className="text-2xl lg:text-3xl flex items-center gap-2">
@@ -434,7 +449,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
       </div>
 
       {/* RF18 - Alertas y notificaciones */}
-      <Card>
+      <Card className="hidden sm:block">
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
@@ -500,8 +515,8 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
       </Card>
 
       {/* RF22 - Gráficos de consumo */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+      <div className="dashboard-chart-grid grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <Card className="hidden sm:block">
           <CardHeader>
             <CardTitle>{t('dashboard.dailyConsumption')}</CardTitle>
             <CardDescription>{t('dashboard.waterConsumptionPerHour')}</CardDescription>
@@ -513,7 +528,19 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          className="dashboard-weekly-chart cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          role="link"
+          tabIndex={0}
+          aria-label={t('nav.reports')}
+          onClick={() => navigate('/app/reports')}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              navigate('/app/reports');
+            }
+          }}
+        >
           <CardHeader>
             <CardTitle>{t('dashboard.weeklyConsumption')}</CardTitle>
             <CardDescription>{t('dashboard.waterConsumptionPerDay')}</CardDescription>
@@ -527,43 +554,62 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
       </div>
 
       {/* RF14 - Estado de dispositivos */}
-      <Card>
+      <Card
+        className="dashboard-devices cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+        role="link"
+        tabIndex={0}
+        aria-label={t('nav.devices')}
+        onClick={() => navigate('/app/devices')}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            navigate('/app/devices');
+          }
+        }}
+      >
         <CardHeader>
           <CardTitle>{t('dashboard.iotDeviceStatus')}</CardTitle>
           <CardDescription>{t('dashboard.realTimeMonitoring')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {devices.length === 0 && (
+              <p className="text-sm text-gray-600">{t('devices.noDevicesRegistered')}</p>
+            )}
             {devices.map((device) => (
               <div
                 key={device.id}
-                className="p-4 border rounded-lg space-y-3 hover:shadow-md transition-shadow"
+                className={`dashboard-device-card is-${device.status} p-4 border rounded-lg space-y-3 hover:shadow-md transition-shadow`}
               >
-                <div className="flex items-start justify-between gap-2">
+                <div className="dashboard-device-card-heading flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <Droplets className="size-4 text-blue-600 flex-shrink-0" aria-hidden="true" />
-                      <span className="text-sm truncate">{device.name}</span>
+                      <span className="dashboard-device-name text-sm truncate">{device.name}</span>
                     </div>
                   </div>
                   <Badge
-                    variant={device.status === 'online' ? 'default' : 'destructive'}
-                    className="flex-shrink-0"
+                    variant={
+                      device.status === 'online'
+                        ? 'default'
+                        : device.status === 'offline'
+                          ? 'destructive'
+                          : 'outline'
+                    }
+                    className={`dashboard-device-status is-${device.status} flex-shrink-0`}
                   >
                     {device.status === 'online' ? (
-                      <>
-                        <Wifi className="size-3 mr-1" aria-hidden="true" /> {t('dashboard.online')}
-                      </>
+                      <Wifi className="size-3 mr-1" aria-hidden="true" />
+                    ) : device.status === 'offline' ? (
+                      <WifiOff className="size-3 mr-1" aria-hidden="true" />
                     ) : (
-                      <>
-                        <WifiOff className="size-3 mr-1" aria-hidden="true" />{' '}
-                        {t('dashboard.offline')}
-                      </>
+                      <CircleHelp className="size-3 mr-1" aria-hidden="true" />
                     )}
+                    {t(`devices.connectivity.${device.status}`)}
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between text-sm">
+                <div className="dashboard-device-detail flex items-center justify-between text-sm">
                   <span className="text-gray-600">Última conexión</span>
                   <span>
                     {device.lastConnectionAt
@@ -571,7 +617,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
                       : 'Sin registro'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="dashboard-device-flow flex items-center justify-between text-sm">
                   <span className="text-gray-600">{t('dashboard.currentFlow')}</span>
                   <span>
                     {device.currentFlowLpm === null || device.currentFlowLpm === undefined
