@@ -107,7 +107,8 @@ export function SupportTickets({ management = false }: { management?: boolean })
 
   const create = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await supportApi.create({
         title: form.get('title'),
@@ -117,7 +118,7 @@ export function SupportTickets({ management = false }: { management?: boolean })
       });
       toast.success(t('support.ticketCreatedShort'));
       setOpen(false);
-      event.currentTarget.reset();
+      formElement.reset();
       await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('support.ticketCreateError'));

@@ -5,12 +5,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": false
+      "edgeToEdgeEnabled": false,
+      "package": "com.anonymous.hidrosmartmobile"
     },
     "androidNavigationBar": {
       "backgroundColor": "#020617",
@@ -24,6 +27,7 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": false,
+          "neverForLocation": true,
           "bluetoothAlwaysPermission": "HidroSmart utiliza Bluetooth para encontrar y configurar dispositivos de monitoreo de agua."
         }
       ]

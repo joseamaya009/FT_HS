@@ -75,7 +75,6 @@ export type BleProvisioningPayload = {
   mqttHost?: string;
   mqttPort?: number;
   deviceCode?: string;
-  disableBleAfterProvisioning?: boolean;
 };
 
 function getBluetooth(): BluetoothApi | null {
