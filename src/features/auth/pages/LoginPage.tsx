@@ -197,18 +197,18 @@ export function LoginScreen({
   };
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-100 p-3 sm:p-4">
-      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-8 items-center">
-        <div className="text-center md:text-left space-y-3 md:space-y-6">
+    <div className="auth-page min-h-dvh flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-100 p-3 py-8 sm:p-4">
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 items-start md:items-center">
+        <div className="text-center md:text-left space-y-2 md:space-y-6">
           <div className="flex min-w-0 items-center justify-center md:justify-start gap-3 sm:gap-4">
-            <div className="bg-blue-600 p-2 rounded-xl sm:p-3 sm:rounded-2xl">
-              <img src={logoImage} alt="HidroSmart Logo" className="h-12 w-auto sm:h-20" />
+            <div className="bg-blue-600 p-1.5 rounded-xl sm:p-3 sm:rounded-2xl">
+              <img src={logoImage} alt="HidroSmart Logo" className="h-10 w-auto sm:h-20" />
             </div>
-            <h1 className="min-w-0 break-words text-2xl sm:text-5xl text-blue-900 hidrosmart-logo">
+            <h1 className="min-w-0 break-words text-xl sm:text-5xl text-blue-900 hidrosmart-logo">
               {t('app.name')}
             </h1>
           </div>
-          <h2 className="text-base sm:text-2xl text-blue-800">{t('app.tagline')}</h2>
+          <h2 className="text-sm leading-snug sm:text-2xl text-blue-800">{t('app.tagline')}</h2>
           <p className="hidden text-blue-700 sm:block">{t('login.description')}</p>
           <div className="hidden sm:grid grid-cols-3 gap-4 pt-4">
             <div className="text-center">
@@ -226,7 +226,7 @@ export function LoginScreen({
           </div>
         </div>
 
-        <Card className="w-full shadow-2xl">
+        <Card className="w-full overflow-hidden rounded-2xl border border-white/70 shadow-xl">
           <Tabs
             defaultValue="login"
             className="w-full"
@@ -234,22 +234,22 @@ export function LoginScreen({
               if (value === 'register') onRegisterClick();
             }}
           >
-            <TabsList className="grid w-full grid-cols-2 mobile-equal-tabs sm:w-full [--mobile-tabs:2]">
-              <TabsTrigger value="login" className="w-full">
+            <TabsList className="mx-4 mt-4 grid w-[calc(100%-2rem)] grid-cols-2 rounded-xl bg-slate-100 p-1 mobile-equal-tabs [--mobile-tabs:2]">
+              <TabsTrigger value="login" className="min-h-10 w-full text-sm">
                 {t('auth.login')}
               </TabsTrigger>
-              <TabsTrigger value="register" className="w-full">
+              <TabsTrigger value="register" className="min-h-10 w-full text-sm">
                 {t('auth.register')}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
               <form onSubmit={handleLogin}>
-                <CardHeader>
-                  <CardTitle>{t('auth.login')}</CardTitle>
+                <CardHeader className="px-5 pt-5 pb-3 sm:px-6">
+                  <CardTitle>{t('auth.welcomeBack')}</CardTitle>
                   <CardDescription>{t('auth.enterCredentials')}</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-5 sm:px-6">
                   {registrationPending && (
                     <Alert>
                       <AlertCircle className="size-4" />
@@ -277,13 +277,19 @@ export function LoginScreen({
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pr-10"
+                        className="pr-12"
                         required
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-500 hover:text-gray-700"
+                        className="absolute right-2 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-gray-500 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-0"
+                        style={{
+                          border: 'none',
+                          outline: 'none',
+                          boxShadow: 'none',
+                          background: 'transparent',
+                        }}
                         aria-label={showPassword ? t('common.hide') : t('common.show')}
                       >
                         {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -301,21 +307,29 @@ export function LoginScreen({
                     <DialogTrigger asChild>
                       <button
                         type="button"
-                        className="h-auto min-h-0 p-0 text-left text-sm text-blue-600 hover:underline"
+                        className="h-auto min-h-0 border-0 bg-transparent p-0 text-left text-sm font-medium text-blue-700 shadow-none hover:bg-transparent hover:underline focus-visible:outline-none focus-visible:ring-0"
+                        style={{
+                          border: 'none',
+                          outline: 'none',
+                          boxShadow: 'none',
+                          background: 'transparent',
+                        }}
                       >
                         {t('auth.forgotPassword')}
                       </button>
                     </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{t('auth.recoverPassword')}</DialogTitle>
-                        <DialogDescription>
+                    <DialogContent className="auth-reset-dialog">
+                      <DialogHeader className="auth-reset-header">
+                        <DialogTitle className="auth-reset-title">
+                          {t('auth.recoverPassword')}
+                        </DialogTitle>
+                        <DialogDescription className="auth-reset-description">
                           {isResetFromEmail
                             ? 'Crea una nueva contraseña para tu cuenta.'
                             : t('auth.recoverPasswordDesc')}
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4 py-4">
+                      <div className="auth-reset-fields space-y-4 py-4">
                         {isResetFromEmail ? (
                           <>
                             <div className="space-y-2">
@@ -394,19 +408,28 @@ export function LoginScreen({
                           </AlertDescription>
                         </Alert>
                       </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsResetDialogOpen(false)}>
+                      <DialogFooter className="auth-reset-footer">
+                        <Button
+                          className="auth-reset-cancel"
+                          variant="outline"
+                          onClick={() => setIsResetDialogOpen(false)}
+                        >
                           {t('common.cancel')}
                         </Button>
                         {isResetFromEmail ? (
                           <Button
+                            className="auth-reset-submit"
                             onClick={handlePasswordResetComplete}
                             disabled={isResettingPassword || resetContextStatus !== 'valid'}
                           >
                             {isResettingPassword ? 'Restableciendo...' : 'Restablecer contraseña'}
                           </Button>
                         ) : (
-                          <Button onClick={handlePasswordReset} disabled={isRequestingReset}>
+                          <Button
+                            className="auth-reset-submit"
+                            onClick={handlePasswordReset}
+                            disabled={isRequestingReset}
+                          >
                             {isRequestingReset ? 'Enviando...' : t('auth.sendLink')}
                           </Button>
                         )}
@@ -414,8 +437,11 @@ export function LoginScreen({
                     </DialogContent>
                   </Dialog>
                 </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="w-full">
+                <CardFooter className="px-5 pb-5 sm:px-6 sm:pb-6">
+                  <Button
+                    type="submit"
+                    className="h-12 w-full rounded-xl text-sm font-semibold shadow-sm"
+                  >
                     {t('auth.login')}
                   </Button>
                 </CardFooter>

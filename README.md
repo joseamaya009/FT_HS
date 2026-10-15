@@ -1,90 +1,46 @@
-# Frontend HidroSmart
-
-Web y Mobile viven en este único proyecto frontend.
-
-```text
-frontend/
-├── src/                  # Fuente principal React + TypeScript + Vite
-│   ├── app/
-│   ├── features/
-│   └── mobile/           # Adaptador Expo/React Native que carga el build web
-├── index.html            # Entrada Web/Vite
-├── index.js              # Entrada Expo
-├── package.json          # Dependencias y scripts de Web + Mobile
-├── vite.config.js
-├── app.json
-└── scripts/
-    └── prepare-mobile-bundle.mjs
-```
+# Aplicación web y móvil
 
 ## Web
 
-Desde `FT_HS/frontend`:
-
 ```powershell
-npm ci
-npm run dev
+npm.cmd install
+npm.cmd run dev
 ```
 
-Abre `http://localhost:5173`. Para producción usa `npm run build`.
+La aplicación Vite queda disponible normalmente en `http://localhost:5173`.
+Configura `VITE_API_URL` en `.env` con la URL de la API cuando ejecutes fuera de
+Docker.
 
-## Mobile
-
-Desde la misma carpeta:
-
-```powershell
-npm ci
-npm run mobile:start
-```
-
-El script compila la aplicación Web y genera el HTML embebido que Expo carga
-en el WebView. Para ejecutar una plataforma específica:
+## Validación
 
 ```powershell
-npm run mobile:android
-npm run mobile:ios
-npm run mobile:web
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd run build
 ```
 
-No hay dependencias ni instalaciones separadas para Web y Mobile. La UI,
-rutas, autenticación y llamadas al backend salen del mismo código Web.
+## Android
 
-## Perfil y verificación de cuenta
-
-El registro queda pendiente hasta confirmar el enlace recibido por correo. El
-frontend conserva el correo al volver al login y muestra el estado de espera;
-la sesión solo se crea después de la verificación.
-
-La configuración del perfil permite elegir un avatar JPG, PNG o WebP de hasta
-2 MB y guardar teléfonos de hasta 60 caracteres. La imagen se valida en cliente
-y backend, se persiste en PostgreSQL y se reutiliza en el encabezado.
-
-## Datos y recomendaciones
-
-Las métricas de hogares, consumo, tarifas y reportes se muestran únicamente
-con datos devueltos por la API. Si la base no tiene registros, la interfaz
-muestra el estado vacío y no inventa valores locales.
-
-La pantalla de recomendaciones contiene tarjetas informativas de presentación.
-No tienen estados, botones de acción ni persistencia en la base de datos.
-
-## Docker
-
-El servicio `frontend` del Compose raíz construye este directorio:
+El móvil empaqueta el bundle web y lo carga en un development build Expo. Abre
+un emulador Android antes de ejecutar:
 
 ```powershell
-docker compose --env-file .env up -d --build frontend
+$env:REACT_NATIVE_ARCHITECTURES = 'x86_64'
+npm.cmd run mobile:android
 ```
 
-La ejecución integrada de toda la solución se realiza desde la raíz del
-repositorio:
+En otra terminal:
 
 ```powershell
-docker compose --env-file .env up -d --build
+npm.cmd run mobile:start -- --localhost
 ```
 
-La documentación específica está en `FT_HS/docs` y la guía general en
-`docs/guia-ejecucion-local.md`.
+`mobile:android` genera el bundle, ejecuta prebuild, compila, instala el APK y
+configura `adb reverse` para el emulador. `mobile:doctor` revisa la instalación
+Expo. Para un teléfono físico, `EXPO_PUBLIC_API_URL` debe ser una URL accesible
+por la red; `localhost` apunta al propio teléfono.
 
-El flujo de registro, vinculación, edición y verificación de dispositivos está
-documentado en [`../../docs/dispositivos-iot.md`](../../docs/dispositivos-iot.md).
+## Variables
+
+Usa `.env.example` como plantilla. No confirmes archivos `.env`, bundles
+generados ni directorios de compilación Android.

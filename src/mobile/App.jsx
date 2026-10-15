@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
-import { NavigationBar } from 'expo-navigation-bar';
+import * as NavigationBar from 'expo-navigation-bar';
 
 import { HidroSmartWebView } from './components/HidroSmartWebView';
 import { MobileShell } from './components/MobileShell';
+import { colors } from './constants/colors';
 
 export default function App() {
   useEffect(() => {
@@ -11,12 +12,12 @@ export default function App() {
       return;
     }
 
-    NavigationBar.setStyle('dark');
+    void NavigationBar.setBackgroundColorAsync(colors.navigationBar);
+    void NavigationBar.setButtonStyleAsync('light');
   }, []);
 
   return (
     <MobileShell>
-      <NavigationBar style="dark" />
       <HidroSmartWebView />
     </MobileShell>
   );

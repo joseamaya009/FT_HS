@@ -70,7 +70,6 @@ export const deviceProvisioning = {
     mqttHost?: string;
     mqttPort?: number;
     deviceCode?: string;
-    disableBleAfterProvisioning?: boolean;
   }) {
     sendNative('BLE_PROVISION', payload);
   },
@@ -103,7 +102,6 @@ export type NativeBleProvisioningConnection = {
     mqttHost?: string;
     mqttPort?: number;
     deviceCode?: string;
-    disableBleAfterProvisioning?: boolean;
   }) => Promise<void>;
   disconnect: () => void;
 };
@@ -129,6 +127,12 @@ export async function connectNativeBleProvisioning(
       if (scanTimeout) clearTimeout(scanTimeout);
       if (writeTimeout) clearTimeout(writeTimeout);
       unsubscribe();
+      try {
+        deviceProvisioning.stopScan();
+        deviceProvisioning.disconnect();
+      } catch {
+        // El puente puede estar desmontándose mientras vence el tiempo.
+      }
       if (writeReject) writeReject(error);
       if (!connected) reject(error);
     };
