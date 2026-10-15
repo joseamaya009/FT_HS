@@ -2,6 +2,24 @@
 
 /* Mobile-first responsive typography */
 @media (max-width: 640px) {
+  /* En móvil, el encabezado y la página se desplazan juntos; solo la barra inferior queda fija. */
+  .app-content-column {
+    min-height: 0;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-header {
+    flex-shrink: 0;
+  }
+
+  .app-main {
+    flex: none !important;
+    overflow: visible !important;
+  }
+
   :root {
     --font-size: 14px;
   }
@@ -228,6 +246,12 @@ body,
 @media (max-width: 640px) {
   html {
     font-size: 14px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    overscroll-behavior-x: none;
   }
 
   .text-4xl {
@@ -285,6 +309,11 @@ body,
     align-items: flex-start;
     flex-wrap: wrap;
     gap: 0.75rem;
+  }
+
+  .homes-card-actions {
+    align-items: center !important;
+    flex-wrap: nowrap !important;
   }
 
   [data-slot='button'] {
@@ -346,10 +375,112 @@ body,
   [data-slot='dialog-content'] {
     left: 0.5rem !important;
     right: 0.5rem !important;
-    top: 0.75rem !important;
+    top: max(calc(env(safe-area-inset-top, 0px) + 0.75rem), 3rem) !important;
     width: auto !important;
     max-width: calc(100vw - 1rem) !important;
     transform: none !important;
+  }
+
+  .auth-reset-dialog[data-slot='dialog-content'] {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.875rem !important;
+    max-height: calc(100dvh - 4rem) !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 1rem;
+    padding: 1.25rem !important;
+    scroll-padding-block: 1rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .auth-reset-header[data-slot='dialog-header'] {
+    gap: 0.5rem;
+    padding: 0 2rem 0 0 !important;
+    text-align: left;
+  }
+
+  .auth-reset-title[data-slot='dialog-title'] {
+    padding: 0;
+    font-size: 1.2rem !important;
+    line-height: 1.5rem !important;
+  }
+
+  .auth-reset-description[data-slot='dialog-description'] {
+    font-size: 0.9rem;
+    line-height: 1.35rem;
+  }
+
+  .auth-reset-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    padding-block: 0.25rem !important;
+  }
+
+  .auth-reset-fields > * {
+    margin: 0 !important;
+  }
+
+  .auth-reset-fields > .space-y-2 {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .auth-reset-fields > .space-y-2 > * {
+    margin: 0 !important;
+  }
+
+  .auth-reset-fields [data-slot='input']:focus-visible {
+    border-color: rgb(37 99 235 / 0.75);
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.16) !important;
+  }
+
+  .auth-reset-fields [data-slot='alert'] {
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .auth-reset-fields [data-slot='alert-description'] {
+    font-size: 0.8rem;
+    line-height: 1.2rem;
+  }
+
+  .auth-reset-footer[data-slot='dialog-footer'] {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap;
+    gap: 0.625rem;
+    padding-top: 0.25rem;
+  }
+
+  .auth-reset-footer[data-slot='dialog-footer'] > [data-slot='button'] {
+    flex: 1 1 0 !important;
+    width: auto;
+    min-width: 0 !important;
+    min-height: 2.875rem !important;
+    height: 2.875rem !important;
+    padding: 0.5rem 0.4rem !important;
+    border-radius: 0.75rem;
+    font-size: 0.85rem !important;
+    line-height: 1.1rem !important;
+  }
+
+  .auth-reset-dialog .dialog-close {
+    top: 0.75rem !important;
+    right: 0.75rem !important;
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    min-width: 2.25rem !important;
+    min-height: 2.25rem !important;
+    border: 0 !important;
+    border-radius: 9999px;
+    outline: none !important;
+    box-shadow: none !important;
   }
 
   [data-slot='dialog-title'] {
@@ -369,7 +500,163 @@ body,
   }
 
   main[role='main'] {
-    padding-bottom: 5.5rem !important;
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mobile-consumption-page [data-slot='card'].consumption-secondary-metric {
+    display: none !important;
+  }
+
+  .mobile-consumption-page .consumption-reset-button {
+    width: auto !important;
+    min-width: 0 !important;
+    padding-inline: 0.875rem !important;
+  }
+
+  .mobile-consumption-page .consumption-reset-button span {
+    display: inline !important;
+  }
+
+  .mobile-bottom-navigation {
+    position: fixed !important;
+    z-index: 40 !important;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex !important;
+    align-items: stretch;
+    justify-content: space-around;
+    gap: 0.125rem;
+    border-top: 1px solid var(--border);
+    background: var(--card);
+    padding: 0.375rem 0.25rem calc(env(safe-area-inset-bottom, 0px) + 0.375rem);
+    box-shadow: 0 -4px 18px rgb(15 23 42 / 0.08);
+  }
+
+  .mobile-bottom-navigation-item {
+    display: flex;
+    min-width: 0 !important;
+    min-height: 3.25rem !important;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background: transparent;
+    padding: 0.25rem 0.125rem !important;
+    color: #64748b;
+    font-size: 0.65rem !important;
+    line-height: 0.85rem !important;
+    text-align: center;
+    touch-action: manipulation;
+  }
+
+  .mobile-bottom-navigation-item svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: 0 0 1.25rem;
+  }
+
+  .mobile-bottom-navigation-item span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-bottom-navigation-item.is-active {
+    background: rgb(37 99 235 / 0.1);
+    color: #1d4ed8;
+    font-weight: 600;
+  }
+
+  .dashboard-card-link {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .dashboard-card-link:focus-visible {
+    border-radius: 0.2rem;
+    outline: 2px solid #2563eb;
+    outline-offset: 3px;
+  }
+
+  .floating-language-switcher {
+    z-index: 40 !important;
+  }
+
+  .mobile-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem !important;
+  }
+
+  .mobile-dashboard > * {
+    margin: 0 !important;
+  }
+
+  .mobile-dashboard [data-slot='card-header'] {
+    padding: 0.875rem 1rem 0.5rem !important;
+  }
+
+  .mobile-dashboard [data-slot='card-content'] {
+    padding: 0 1rem 0.875rem !important;
+  }
+
+  .mobile-dashboard .dashboard-weekly-chart [data-slot='card-content'] {
+    padding-top: 0.25rem !important;
+  }
+
+  .mobile-dashboard .dashboard-weekly-chart [data-slot='card-title'],
+  .mobile-dashboard .dashboard-devices [data-slot='card-title'] {
+    font-size: 1rem !important;
+  }
+}
+
+[data-slot='tabs-list'].settings-tabs-carousel {
+  display: flex !important;
+  width: 100%;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-slot='tabs-list'].settings-tabs-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+[data-slot='tabs-list'].settings-tabs-carousel [data-slot='tabs-trigger'] {
+  flex: 0 0 auto !important;
+  min-width: max-content;
+  white-space: nowrap;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 641px) {
+  [data-slot='tabs-list'].settings-tabs-carousel {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-slot='tabs-list'].settings-tabs-carousel {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
 
@@ -378,6 +665,16 @@ body,
   bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
   pointer-events: auto;
   touch-action: manipulation;
+}
+
+.auth-page {
+  padding-top: max(calc(env(safe-area-inset-top, 0px) + 1rem), 2rem);
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+  main[role='main'] {
+    padding-bottom: 5.5rem !important;
+  }
 }
 
 @media (min-width: 640px) {
@@ -389,6 +686,10 @@ body,
 
 /* Optimizaciones adicionales para móviles */
 @media (max-width: 640px) {
+  .floating-language-switcher {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 4.75rem);
+  }
+
   /* Mejorar touchability de elementos interactivos */
   button,
   [role='button'],
@@ -437,11 +738,25 @@ body,
     font-size: 0.875rem !important;
   }
 
-  /* Scrolleable horizontal para tablas */
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+  /* Las tablas mantienen su semántica; el contenedor gestiona el desplazamiento. */
+  [data-slot='table-container'],
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  /* Evita que menús y selectores emergentes se salgan de la pantalla. */
+  [data-slot='popover-content'],
+  [data-slot='select-content'],
+  [data-slot='dropdown-menu-content'],
+  [data-slot='context-menu-content'] {
+    max-width: calc(100vw - 1rem) !important;
+  }
+
+  /* Los tooltips de gráficas quedan dentro del ancho disponible. */
+  .recharts-tooltip-wrapper {
+    max-width: calc(100% - 1rem) !important;
   }
 
   /* Mejorar visibilidad de iconos pequeños */
@@ -502,6 +817,879 @@ body,
   main[role='main'] {
     padding: 1.5rem !important;
   }
+}
+
+/* Acabado visual unificado para la experiencia móvil */
+@media (max-width: 640px) {
+  body,
+  .app-content-column {
+    background: #f4f8fc;
+  }
+
+  .app-header {
+    border-color: #e4ebf3;
+    background: rgb(255 255 255 / 0.96);
+    padding: 0.9rem 1rem !important;
+  }
+
+  .app-header h1 {
+    font-weight: 650;
+    letter-spacing: -0.025em;
+  }
+
+  .app-header button[aria-label] {
+    border: 1px solid #e5edf5;
+    background: #ffffff;
+  }
+
+  main.app-main[role='main'] {
+    padding: 1rem 0.875rem calc(6rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .app-main [data-slot='card'] {
+    border-color: #e2eaf3;
+    border-radius: 1.1rem;
+    box-shadow: 0 2px 9px rgb(30 64 110 / 0.045);
+  }
+
+  .app-main [data-slot='card-header'] {
+    padding: 1rem 1rem 0.6rem !important;
+  }
+
+  .app-main [data-slot='card-content'] {
+    padding: 0.35rem 1rem 1rem !important;
+  }
+
+  .mobile-dashboard {
+    gap: 1rem !important;
+  }
+
+  .mobile-dashboard > div:first-child > [data-slot='card']:first-child {
+    border-color: #bfdbfe;
+    background: linear-gradient(135deg, #eff6ff 0%, #ecfeff 100%);
+    box-shadow: 0 6px 18px rgb(37 99 235 / 0.08);
+  }
+
+  .mobile-dashboard
+    > div:first-child
+    > [data-slot='card']:first-child
+    [data-slot='card-description'] {
+    color: #1d4ed8;
+    font-weight: 600;
+  }
+
+  .mobile-dashboard > div:first-child > [data-slot='card']:first-child [data-slot='card-title'] {
+    color: #0f172a;
+    font-size: 1.65rem !important;
+    letter-spacing: -0.035em;
+  }
+
+  .mobile-dashboard .dashboard-weekly-chart,
+  .mobile-dashboard .dashboard-devices {
+    overflow: hidden;
+  }
+
+  .mobile-dashboard .dashboard-weekly-chart [data-slot='card-content'] {
+    padding: 0.25rem 0.6rem 0.85rem !important;
+  }
+
+  .mobile-dashboard .dashboard-devices [data-slot='card-content'] > div > div {
+    border-color: #e6edf5;
+    border-radius: 0.9rem;
+    background: #fbfdff;
+    padding: 0.875rem;
+  }
+
+  .mobile-homes-page .homes-carousel {
+    margin-inline: -0.25rem;
+    padding: 0.2rem 0.25rem 0.85rem;
+    scrollbar-width: none;
+  }
+
+  .mobile-homes-page .homes-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-homes-page .home-selection-card {
+    border-radius: 1.1rem;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
+  }
+
+  .mobile-homes-page .home-selection-card.is-selected {
+    border-color: #60a5fa;
+    background: linear-gradient(145deg, #ffffff 0%, #eff6ff 100%);
+    box-shadow: 0 7px 20px rgb(37 99 235 / 0.1);
+  }
+
+  .mobile-homes-page .homes-members-card {
+    border-top: 3px solid #bfdbfe;
+  }
+
+  .mobile-homes-page .homes-members-card [data-slot='card-content'] > div > div {
+    border-color: #e8eef5;
+    background: #fbfdff;
+  }
+
+  .mobile-consumption-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.65rem !important;
+  }
+
+  .mobile-consumption-metrics [data-slot='card'] {
+    min-width: 0;
+    background: #ffffff;
+  }
+
+  .mobile-consumption-metrics [data-slot='card-header'] {
+    min-height: 5.25rem;
+    padding: 0.85rem 0.8rem 0.35rem !important;
+  }
+
+  .mobile-consumption-metrics [data-slot='card-description'] {
+    font-size: 0.78rem;
+    line-height: 1.1rem;
+  }
+
+  .mobile-consumption-metrics [data-slot='card-title'] {
+    font-size: 1.1rem !important;
+    line-height: 1.4rem !important;
+  }
+
+  .mobile-consumption-metrics [data-slot='card-content'] {
+    min-height: 2.2rem;
+    padding: 0.2rem 0.8rem 0.75rem !important;
+  }
+
+  .mobile-consumption-page .mobile-consumption-charts [data-slot='card'] {
+    border-top: 3px solid #bae6fd;
+  }
+
+  .mobile-consumption-page input[type='date'] {
+    border-color: #d7e1ec;
+    background: #ffffff;
+  }
+
+  .mobile-reports-page > .grid > [data-slot='card'] {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+  }
+
+  .mobile-reports-page > .grid > [data-slot='card']:first-child {
+    border-top: 3px solid #60a5fa;
+  }
+
+  .mobile-reports-page > .grid > [data-slot='card']:last-child {
+    border-top: 3px solid #67c6d4;
+  }
+
+  .mobile-report-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .mobile-report-actions [data-slot='button'] {
+    min-width: 0 !important;
+    padding-inline: 0.45rem !important;
+    font-size: 0.78rem !important;
+    white-space: nowrap;
+  }
+
+  .mobile-report-actions [data-slot='button'] svg {
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 1rem;
+  }
+
+  .mobile-reports-page .mobile-inline-grid > div {
+    border-color: #e5edf5;
+    border-radius: 0.85rem;
+    background: #fbfdff;
+    padding: 0.75rem 0.35rem;
+  }
+
+  [data-slot='tabs-list'].settings-tabs-carousel {
+    border: 1px solid #e3eaf2;
+    border-radius: 0.95rem;
+    background: #ffffff;
+    padding: 0.35rem;
+    box-shadow: 0 2px 8px rgb(30 64 110 / 0.04);
+  }
+
+  [data-slot='tabs-list'].settings-tabs-carousel [data-slot='tabs-trigger'] {
+    min-height: 2.7rem !important;
+    border-radius: 0.7rem;
+    font-size: 0.82rem !important;
+  }
+
+  .mobile-bottom-navigation {
+    border-color: #e1e8f0;
+    background: rgb(255 255 255 / 0.96);
+    padding-top: 0.45rem;
+    box-shadow: 0 -5px 20px rgb(15 23 42 / 0.075);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+
+  .mobile-bottom-navigation-item {
+    min-height: 3.35rem !important;
+    font-size: 0.68rem !important;
+  }
+
+  .mobile-bottom-navigation-item svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    flex-basis: 1.3rem;
+  }
+
+  .mobile-bottom-navigation-item.is-active {
+    background: #eaf2ff;
+    color: #1d4ed8;
+  }
+
+  .floating-language-switcher {
+    right: 0.75rem;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 4.45rem);
+  }
+
+  .floating-language-switcher [data-slot='button'] {
+    width: 2.8rem !important;
+    height: 2.8rem !important;
+    min-width: 2.8rem !important;
+    min-height: 2.8rem !important;
+    padding: 0.3rem !important;
+    box-shadow: 0 4px 12px rgb(37 99 235 / 0.25);
+  }
+
+  .floating-language-switcher [data-slot='button'] svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .dark body,
+  .dark .app-content-column {
+    background: #0b1220;
+  }
+
+  .dark .app-header {
+    border-color: #26354b;
+    background: rgb(17 28 47 / 0.96);
+  }
+
+  .dark .app-header button[aria-label] {
+    border-color: #334155;
+    background: #151f32;
+  }
+
+  .dark .app-main [data-slot='card'] {
+    border-color: #2b3a50;
+    box-shadow: 0 2px 9px rgb(0 0 0 / 0.14);
+  }
+
+  .dark .mobile-dashboard > div:first-child > [data-slot='card']:first-child {
+    border-color: #244b7a;
+    background: linear-gradient(135deg, #172b4d 0%, #12313b 100%);
+  }
+
+  .dark
+    .mobile-dashboard
+    > div:first-child
+    > [data-slot='card']:first-child
+    [data-slot='card-description'] {
+    color: #93c5fd;
+  }
+
+  .dark
+    .mobile-dashboard
+    > div:first-child
+    > [data-slot='card']:first-child
+    [data-slot='card-title'] {
+    color: #f1f5f9;
+  }
+
+  .dark .mobile-dashboard .dashboard-devices [data-slot='card-content'] > div > div,
+  .dark .mobile-homes-page .homes-members-card [data-slot='card-content'] > div > div,
+  .dark .mobile-reports-page .mobile-inline-grid > div {
+    border-color: #2b3a50;
+    background: #111b2d;
+  }
+
+  .dark .mobile-homes-page .home-selection-card.is-selected {
+    border-color: #3b82f6;
+    background: linear-gradient(145deg, #151f32 0%, #172b4d 100%);
+  }
+
+  .dark .mobile-consumption-metrics [data-slot='card'],
+  .dark .mobile-reports-page > .grid > [data-slot='card'] {
+    background: #151f32;
+  }
+
+  .dark .mobile-consumption-page input[type='date'] {
+    border-color: #334155;
+    background: #111b2d;
+    color: #e8eef8;
+    color-scheme: dark;
+  }
+
+  .dark [data-slot='tabs-list'].settings-tabs-carousel,
+  .dark .mobile-bottom-navigation {
+    border-color: #2b3a50;
+    background: rgb(17 28 47 / 0.96);
+  }
+
+  .dark .mobile-bottom-navigation-item.is-active {
+    background: #1a3154;
+    color: #93c5fd;
+  }
+}
+
+/* Tarjetas de estado y telemetria IoT */
+.iot-device-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 1280px) {
+  .iot-device-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+.iot-stat-card {
+  overflow: hidden;
+  border-color: #e3eaf2;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.iot-stat-card [data-slot='card-header'] {
+  display: grid;
+  grid-template-columns: 2.65rem minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 0.75rem;
+  padding: 1rem !important;
+}
+
+.iot-stat-icon {
+  grid-row: 1 / span 2;
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  place-items: center;
+  border-radius: 0.9rem;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.iot-stat-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.iot-stat-card [data-slot='card-description'] {
+  align-self: end;
+  font-size: 0.78rem;
+}
+
+.iot-stat-card [data-slot='card-title'] {
+  align-self: start;
+  font-size: 1.35rem !important;
+  line-height: 1.6rem !important;
+}
+
+.iot-stat-online .iot-stat-icon {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.iot-stat-offline .iot-stat-icon {
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.iot-stat-other .iot-stat-icon {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.iot-device-card {
+  position: relative;
+  border-radius: 1rem;
+  box-shadow: 0 3px 12px rgb(30 64 110 / 0.055);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.iot-device-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 24px rgb(30 64 110 / 0.1);
+}
+
+.iot-device-card::before {
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 auto;
+  height: 3px;
+  background: #94a3b8;
+  content: '';
+}
+
+.iot-device-card.is-online::before {
+  background: #10b981;
+}
+
+.iot-device-card.is-offline::before {
+  background: #f43f5e;
+}
+
+.iot-device-card.is-degraded::before {
+  background: #f59e0b;
+}
+
+.iot-device-card.is-error::before {
+  background: #f97316;
+}
+
+.iot-device-card.is-unknown::before {
+  background: #94a3b8;
+}
+
+.iot-device-card-header {
+  background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%);
+}
+
+.iot-device-icon {
+  border: 1px solid #dbeafe;
+  box-shadow: 0 2px 6px rgb(37 99 235 / 0.08);
+}
+
+.iot-device-code {
+  color: #64748b;
+}
+
+.iot-connectivity-badge.is-online {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.iot-connectivity-badge.is-offline {
+  border-color: #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.iot-connectivity-badge.is-degraded {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.iot-connectivity-badge.is-error {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.iot-connectivity-badge.is-unknown {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.iot-device-meta {
+  border-color: #e7edf4;
+  background: #f8fafc;
+}
+
+.iot-device-meta-label,
+.iot-device-meta-value {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.iot-device-meta-label {
+  color: #64748b;
+}
+
+.iot-device-meta-label svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex: 0 0 auto;
+  color: #3b82f6;
+}
+
+.iot-device-last-seen {
+  min-height: 2rem;
+}
+
+.iot-device-last-seen > span:last-child {
+  max-width: 65%;
+}
+
+.iot-alert-threshold {
+  gap: 0.75rem;
+  border: 1px solid #fde7b0;
+  background: #fffbeb;
+}
+
+.iot-alert-threshold > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #92400e;
+}
+
+.iot-alert-threshold > span svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+.iot-alert-threshold strong {
+  color: #78350f;
+  text-align: right;
+}
+
+.iot-telemetry-card {
+  border-color: #dfe8f2;
+  background: #f8fbff;
+}
+
+.iot-telemetry-metrics > div {
+  min-width: 0;
+  padding: 0.85rem;
+}
+
+.iot-telemetry-value {
+  font-size: 1rem;
+  line-height: 1.4rem;
+}
+
+.iot-telemetry-footer {
+  border-color: #e6edf5;
+}
+
+.iot-no-telemetry {
+  display: flex;
+  min-height: 4rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border-color: #dbe5ef;
+  background: #f8fafc;
+}
+
+.iot-no-telemetry svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  color: #3b82f6;
+}
+
+.iot-device-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.iot-device-actions [data-slot='button'] {
+  min-width: 0;
+}
+
+.iot-device-action-unlink {
+  grid-column: 1 / -1;
+}
+
+.dashboard-device-card {
+  position: relative;
+  overflow: hidden;
+  border-color: #e2eaf3;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.dashboard-device-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: #94a3b8;
+  content: '';
+}
+
+.dashboard-device-card.is-online::before {
+  background: #10b981;
+}
+
+.dashboard-device-card.is-offline::before {
+  background: #f43f5e;
+}
+
+.dashboard-device-card.is-degraded::before,
+.dashboard-device-card.is-unknown::before,
+.dashboard-device-card.is-error::before {
+  background: #f59e0b;
+}
+
+.dashboard-device-card:hover {
+  transform: translateY(-1px);
+  border-color: #bfdbfe;
+}
+
+.dashboard-device-card-heading {
+  min-width: 0;
+  align-items: center;
+}
+
+.dashboard-device-name {
+  font-weight: 650;
+  color: #0f172a;
+}
+
+.dashboard-device-status.is-online {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.dashboard-device-status.is-offline {
+  border-color: #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.dashboard-device-status.is-degraded,
+.dashboard-device-status.is-unknown,
+.dashboard-device-status.is-error {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #a16207;
+}
+
+.dashboard-device-detail,
+.dashboard-device-flow {
+  gap: 0.75rem;
+  color: #334155;
+}
+
+.dashboard-device-detail > span:last-child,
+.dashboard-device-flow > span:last-child {
+  max-width: 65%;
+  text-align: right;
+}
+
+.dashboard-device-flow > span:last-child {
+  font-weight: 650;
+  color: #1d4ed8;
+}
+
+@media (max-width: 640px) {
+  .iot-device-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.6rem !important;
+  }
+
+  .iot-stat-card [data-slot='card-header'] {
+    column-gap: 0.6rem;
+    padding: 0.8rem !important;
+  }
+
+  .iot-stat-icon {
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.75rem;
+  }
+
+  .iot-stat-icon svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .iot-stat-card [data-slot='card-description'] {
+    font-size: 0.72rem;
+    line-height: 1rem;
+  }
+
+  .iot-stat-card [data-slot='card-title'] {
+    font-size: 1.2rem !important;
+  }
+
+  .iot-device-grid {
+    gap: 0.85rem !important;
+  }
+
+  .iot-device-card {
+    border-radius: 1rem;
+  }
+
+  .iot-device-card-heading {
+    flex-wrap: wrap;
+  }
+
+  .iot-device-card-header {
+    padding-top: 1.1rem !important;
+  }
+
+  .iot-connectivity-badge {
+    font-size: 0.68rem;
+  }
+
+  .iot-device-meta {
+    padding: 0.75rem !important;
+  }
+
+  .iot-device-last-seen {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .iot-device-last-seen > span:last-child {
+    max-width: 100%;
+    padding-left: 1.25rem;
+    text-align: left !important;
+  }
+
+  .iot-device-card-content {
+    gap: 0.85rem !important;
+  }
+
+  .iot-telemetry-metrics > div {
+    padding: 0.7rem;
+  }
+
+  .iot-telemetry-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .iot-telemetry-value {
+    font-size: 0.92rem;
+  }
+
+  .iot-device-actions [data-slot='button'] {
+    min-height: 2.65rem;
+    padding-inline: 0.55rem;
+    font-size: 0.78rem;
+  }
+
+  .dashboard-device-card {
+    padding: 0.8rem !important;
+  }
+
+  .dashboard-device-card-heading {
+    align-items: flex-start;
+  }
+
+  .dashboard-device-status {
+    max-width: 100%;
+    font-size: 0.68rem;
+  }
+
+  .dashboard-device-detail,
+  .dashboard-device-flow {
+    align-items: flex-start;
+    font-size: 0.78rem !important;
+  }
+
+  .dashboard-device-detail > span:last-child,
+  .dashboard-device-flow > span:last-child {
+    overflow-wrap: anywhere;
+  }
+}
+
+.dark .iot-stat-card,
+.dark .dashboard-device-card {
+  border-color: #2b3a50;
+  background: linear-gradient(145deg, #151f32 0%, #111b2d 100%);
+}
+
+.dark .iot-stat-card [data-slot='card-title'],
+.dark .dashboard-device-name {
+  color: #e8eef8;
+}
+
+.dark .iot-stat-card [data-slot='card-description'],
+.dark .iot-device-code,
+.dark .iot-device-meta-label,
+.dark .iot-device-meta-row > span,
+.dark .iot-device-last-seen > span,
+.dark .dashboard-device-detail,
+.dark .dashboard-device-flow {
+  color: #aab8cc;
+}
+
+.dark .iot-device-card-header {
+  background: linear-gradient(180deg, #151f32 0%, #111b2d 100%);
+}
+
+.dark .iot-device-meta,
+.dark .iot-telemetry-card,
+.dark .iot-no-telemetry,
+.dark .iot-actuators-panel {
+  border-color: #2b3a50;
+  background: #111b2d;
+}
+
+.dark .iot-device-meta-row > span:last-child,
+.dark .iot-device-last-seen > span:last-child,
+.dark .iot-telemetry-value,
+.dark .iot-telemetry-footer strong {
+  color: #e2e8f0;
+}
+
+.dark .iot-telemetry-footer {
+  border-color: #2b3a50;
+  background: #151f32;
+}
+
+.dark .iot-connectivity-badge.is-online {
+  border-color: #065f46;
+  background: #064e3b;
+  color: #a7f3d0;
+}
+
+.dark .iot-connectivity-badge.is-offline {
+  border-color: #9f1239;
+  background: #4c0519;
+  color: #fecdd3;
+}
+
+.dark .iot-connectivity-badge.is-degraded,
+.dark .iot-connectivity-badge.is-error,
+.dark .iot-connectivity-badge.is-unknown,
+.dark .dashboard-device-status.is-error,
+.dark .dashboard-device-status.is-degraded,
+.dark .dashboard-device-status.is-unknown {
+  border-color: #854d0e;
+  background: #422006;
+  color: #fde68a;
+}
+
+.dark .dashboard-device-status.is-online {
+  border-color: #065f46;
+  background: #064e3b;
+  color: #a7f3d0;
+}
+
+.dark .dashboard-device-status.is-offline {
+  border-color: #9f1239;
+  background: #4c0519;
+  color: #fecdd3;
+}
+
+.dark .iot-alert-threshold {
+  border-color: #854d0e;
+  background: #422006;
+}
+
+.dark .iot-alert-threshold > span,
+.dark .iot-alert-threshold strong {
+  color: #fde68a;
 }
 
 /* Mejorar legibilidad en todos los dispositivos */

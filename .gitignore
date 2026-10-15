@@ -34,7 +34,10 @@ Thumbs.db
 # Expo / React Native
 .expo/
 .expo-shared/
+.expo-export-check*/
+android/
 web-build/
 build/
 tmp/
 *.keystore
+.gradle-user-home/

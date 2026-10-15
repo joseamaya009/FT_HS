@@ -46,7 +46,6 @@ interface RegisterScreenProps {
     privacyPolicyVersion: string;
     termsVersion: string;
   }) => Promise<void>;
-  onBack: () => void;
   initialFormData?: {
     name: string;
     email: string;
@@ -69,7 +68,6 @@ interface RegisterScreenProps {
 // RF1 - Registro de Usuario
 export function RegisterScreen({
   onRegister,
-  onBack,
   initialFormData,
   initialLegalAccepted = false,
   onReviewTerms,
@@ -185,18 +183,18 @@ export function RegisterScreen({
   };
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-100 p-3 sm:p-4">
-      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-8 items-center">
-        <div className="text-center md:text-left space-y-3 md:space-y-6">
+    <div className="auth-page min-h-dvh flex items-start justify-center bg-gradient-to-br from-blue-50 to-cyan-100 p-3 py-5 sm:items-center sm:p-4">
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 items-start md:items-center">
+        <div className="text-center md:text-left space-y-2 md:space-y-6">
           <div className="flex min-w-0 items-center justify-center md:justify-start gap-3 sm:gap-4">
-            <div className="bg-blue-600 p-2 rounded-xl sm:p-3 sm:rounded-2xl">
-              <img src={logoImage} alt="HidroSmart Logo" className="h-12 w-auto sm:h-20" />
+            <div className="bg-blue-600 p-1.5 rounded-xl sm:p-3 sm:rounded-2xl">
+              <img src={logoImage} alt="HidroSmart Logo" className="h-10 w-auto sm:h-20" />
             </div>
-            <h1 className="min-w-0 break-words text-2xl sm:text-5xl text-blue-900 hidrosmart-logo">
+            <h1 className="min-w-0 break-words text-xl sm:text-5xl text-blue-900 hidrosmart-logo">
               {t('app.name')}
             </h1>
           </div>
-          <h2 className="text-base sm:text-2xl text-blue-800">{t('app.tagline')}</h2>
+          <h2 className="text-sm leading-snug sm:text-2xl text-blue-800">{t('app.tagline')}</h2>
           <p className="hidden text-blue-700 sm:block">{t('login.description')}</p>
           <div className="hidden sm:grid grid-cols-3 gap-4 pt-4">
             <div className="text-center">
@@ -214,23 +212,18 @@ export function RegisterScreen({
           </div>
         </div>
 
-        <Card className="w-full max-w-2xl justify-self-center shadow-2xl">
-          <div className="grid grid-cols-2 rounded-t-xl bg-gray-100 p-1">
-            <Button type="button" variant="ghost" onClick={onBack} className="rounded-xl">
-              Iniciar Sesión
-            </Button>
-            <div className="flex min-h-8 items-center justify-center rounded-xl bg-white px-3 py-1.5 text-xs font-medium shadow-sm sm:h-9 sm:text-sm">
-              Registrarse
-            </div>
+        <Card className="w-full max-w-2xl justify-self-center overflow-hidden rounded-2xl border border-white/70 shadow-xl">
+          <div className="mx-4 mt-4 flex min-h-11 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-sm font-semibold text-blue-800">
+            Registrarse
           </div>
-          <CardHeader className="pt-3 pb-1 sm:pt-4 sm:pb-2">
+          <CardHeader className="px-5 pt-5 pb-3 sm:px-6 sm:pt-6">
             <CardTitle>{t('auth.createAccountTitle')}</CardTitle>
             <CardDescription>
               Completa todos los campos obligatorios para registrarte
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4 px-5 sm:px-6">
               {/* RF1.1 - Nombre completo */}
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre completo *</Label>
@@ -244,7 +237,7 @@ export function RegisterScreen({
               </div>
 
               {/* RF1.1 - Tipo y número de documento (C.C/C.E) */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="mobile-inline-grid grid grid-cols-2 gap-2 sm:gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="docType">Tipo de documento *</Label>
                   <Select
@@ -302,12 +295,20 @@ export function RegisterScreen({
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => updateFormData('password', e.target.value)}
+                    className="pr-12"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    className="absolute right-2 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-gray-500 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-0"
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      boxShadow: 'none',
+                      background: 'transparent',
+                    }}
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
@@ -385,12 +386,20 @@ export function RegisterScreen({
                     placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={(e) => updateFormData('confirmPassword', e.target.value)}
+                    className={`pr-12 ${formData.confirmPassword && formData.password !== formData.confirmPassword ? 'border-red-500' : ''}`}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    className="absolute right-2 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-gray-500 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-0"
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      boxShadow: 'none',
+                      background: 'transparent',
+                    }}
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="size-4" />
@@ -434,12 +443,13 @@ export function RegisterScreen({
                 </AlertDescription>
               </Alert>
             </CardContent>
-            <CardFooter className="flex flex-col gap-3 sm:flex-row">
-              <Button type="button" variant="outline" onClick={onBack} className="flex-1">
-                Volver
-              </Button>
-              <Button type="submit" className="flex-1" disabled={isSubmitting || !acceptedLegal}>
-                {isSubmitting ? 'Creando cuenta...' : 'Crear Cuenta'}
+            <CardFooter className="px-5 pb-5 sm:px-6 sm:pb-6">
+              <Button
+                type="submit"
+                className="h-12 w-full rounded-xl text-sm font-semibold shadow-sm"
+                disabled={isSubmitting || !acceptedLegal}
+              >
+                {isSubmitting ? 'Creando cuenta...' : 'Registrarse'}
               </Button>
             </CardFooter>
           </form>
