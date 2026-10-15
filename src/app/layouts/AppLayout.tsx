@@ -10,14 +10,11 @@ import {
   Target,
   Users,
   LogOut,
-  Menu,
-  PanelLeftClose,
   Shield,
   Wrench,
   Database,
   Activity,
   Headphones,
-  Lightbulb,
   Loader2,
 } from 'lucide-react';
 import logoImage from '@/imports/aaa-Photoroom-1.png';
@@ -25,14 +22,6 @@ import { Button } from '@shared/ui/button';
 import { Badge } from '@shared/ui/badge';
 import { LazyViewErrorBoundary } from '@shared/ui/LazyViewErrorBoundary';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@shared/ui/sheet';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -95,13 +84,6 @@ const GoalsConfig = lazy(() =>
     default: component,
   }))
 );
-const RecommendationsPage = lazy(() =>
-  import('@features/recommendations/pages/RecommendationsPage').then(
-    ({ RecommendationsPage: component }) => ({
-      default: component,
-    })
-  )
-);
 const AdminPanel = lazy(() =>
   import('@features/admin/pages/AdminPage').then(({ AdminPanel: component }) => ({
     default: component,
@@ -134,7 +116,6 @@ const viewPaths: Record<string, string> = {
   consumption: '/app/consumption',
   reports: '/app/reports',
   goals: '/app/goals',
-  recommendations: '/app/recommendations',
   notifications: '/app/alerts',
   support: '/app/support',
   settings: '/app/settings',
@@ -181,7 +162,6 @@ export function DashboardLayout({ session, onLogout }: DashboardLayoutProps) {
   const canManageTickets = can(session.permissions, 'tickets.manage');
   const isAdministrator = hasRole(session.roles, 'Administrator');
   const activeView = getViewFromPath(pathname);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const profile = { fullName: session.fullName, avatarDataUrl: session.avatarDataUrl };
 
@@ -268,13 +248,6 @@ export function DashboardLayout({ session, onLogout }: DashboardLayoutProps) {
         ariaLabel: t('nav.goals'),
       },
       {
-        id: 'recommendations',
-        label: t('nav.recommendations'),
-        icon: Lightbulb,
-        requiredPermission: 'reports.read',
-        ariaLabel: t('nav.recommendations'),
-      },
-      {
         id: 'support',
         label: t('nav.support'),
         icon: Headphones,
@@ -303,6 +276,12 @@ export function DashboardLayout({ session, onLogout }: DashboardLayoutProps) {
   };
 
   const menuItems = getMenuItems();
+  const mobileNavigationIds = isAdministrator
+    ? ['admin-panel', 'users', 'audit', 'support-panel', 'settings']
+    : ['dashboard', 'homes', 'reports', 'goals', 'settings'];
+  const mobileNavigationItems = mobileNavigationIds
+    .map((id) => menuItems.find((item) => item.id === id))
+    .filter((item): item is MenuItem => Boolean(item));
 
   // Presentación del rol funcional, sin traducirlo a nombres internos.
   const getUserInfo = () => {
@@ -335,7 +314,6 @@ export function DashboardLayout({ session, onLogout }: DashboardLayoutProps) {
     consumption: 'consumption.read',
     reports: 'reports.read',
     goals: 'homes.manage',
-    recommendations: 'reports.read',
     notifications: 'alerts.manage',
   };
 
@@ -352,7 +330,6 @@ export function DashboardLayout({ session, onLogout }: DashboardLayoutProps) {
     consumption: ['HomeUser', 'Guest'],
     reports: ['HomeUser', 'Guest'],
     goals: ['HomeUser'],
-    recommendations: ['HomeUser', 'Guest'],
   };
 
   // RF3.4 - Función para cerrar sesión de manera segura
@@ -423,8 +400,6 @@ export function DashboardLayout({ session, onLogout }: DashboardLayoutProps) {
         return <ReportsAnalytics homeId={selectedHomeId} />;
       case 'goals':
         return <GoalsConfig homeId={selectedHomeId} />;
-      case 'recommendations':
-        return <RecommendationsPage homeId={selectedHomeId} />;
       case 'notifications':
         return <NotificationsPanel homeId={selectedHomeId} />;
       case 'settings':
@@ -434,279 +409,221 @@ export function DashboardLayout({ session, onLogout }: DashboardLayoutProps) {
     }
   };
 
-  // RNF2.2 - Navegación para móvil usando Sheet (RNF7.3)
+  // RNF2.2 - Barra de navegación inferior para móvil (RNF7.3)
   const MobileNavigation = () => (
-    <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="lg:hidden"
-          aria-label={t('common.openNavigationMenu')}
-        >
-          <Menu className="size-6" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent
-        side="left"
-        className="w-[min(20rem,85vw)] p-0 [&>button:last-child]:text-white [&>button:last-child]:hover:bg-blue-800/40 [&>button:last-child]:focus:ring-white"
-      >
-        <SheetHeader className="p-6 bg-blue-900 text-white">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <img src={logoImage} alt="HidroSmart Logo" className="h-12 w-auto" />
-            </div>
-            <SheetTitle className="text-white text-2xl hidrosmart-logo">{t('app.name')}</SheetTitle>
-          </div>
-          <SheetDescription className="text-blue-100">{t('app.tagline')}</SheetDescription>
-          <div className="mt-4">
-            <RoleBadge />
-          </div>
-        </SheetHeader>
-
-        <nav className="p-4 space-y-2" role="navigation" aria-label={t('common.mainNavigation')}>
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  navigate(viewPaths[item.id]);
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  activeView === item.id
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'border border-gray-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800 dark:border-slate-600 dark:bg-[#151f32] dark:text-slate-100 dark:hover:border-blue-500 dark:hover:bg-[#1d2b45] dark:hover:text-white'
-                }`}
-                aria-label={item.ariaLabel}
-                aria-current={activeView === item.id ? 'page' : undefined}
-              >
-                <Icon className="size-5" aria-hidden="true" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="p-4 border-t">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full justify-start border border-gray-200 text-red-600 hover:bg-red-50 dark:border-slate-600 dark:text-red-400 dark:hover:bg-red-950/40 dark:hover:text-red-200"
-                aria-label={t('auth.logout')}
-              >
-                <LogOut className="size-5 mr-3" aria-hidden="true" />
-                {t('auth.logout')}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t('auth.logout')}?</AlertDialogTitle>
-                <AlertDialogDescription>{t('common.logoutConfirmation')}</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleLogout}>{t('auth.logout')}</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </SheetContent>
-    </Sheet>
+    <nav className="mobile-bottom-navigation hidden" aria-label={t('common.mainNavigation')}>
+      {mobileNavigationItems.map((item) => {
+        const Icon = item.icon;
+        const isActive =
+          activeView === item.id || (item.id === 'settings' && activeView === 'support');
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => navigate(viewPaths[item.id])}
+            className={`mobile-bottom-navigation-item${isActive ? ' is-active' : ''}`}
+            aria-label={item.ariaLabel}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            <Icon aria-hidden="true" />
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>
   );
 
   return (
-    <div className="flex h-dvh min-w-0 bg-gray-50 pt-[env(safe-area-inset-top)]">
-      {/* RNF26.1 - Sidebar para desktop (oculto en móvil) */}
-      <aside
-        className={`hidden lg:flex lg:flex-col bg-blue-900 text-white transition-[width] duration-200 ${
-          sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
-        }`}
-      >
-        <div className={`flex-1 overflow-y-auto ${sidebarCollapsed ? 'p-3' : 'p-6'}`}>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <img src={logoImage} alt="HidroSmart Logo" className="h-12 w-auto" />
-            </div>
-            <h1 className={`text-2xl hidrosmart-logo ${sidebarCollapsed ? 'hidden' : ''}`}>
-              {t('app.name')}
-            </h1>
-          </div>
-
-          {/* Badge de rol */}
-          <div className={`mb-6 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
-            {sidebarCollapsed ? (
-              <span className="text-xl" title={roleLabel} aria-label={roleLabel}>
-                {roleIcon}
-              </span>
-            ) : (
-              <RoleBadge />
-            )}
-          </div>
-
-          <nav className="space-y-2" role="navigation" aria-label={t('common.mainNavigation')}>
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(viewPaths[item.id])}
-                  className={`w-full flex items-center rounded-lg py-3 transition-colors ${
-                    sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-4'
-                  } ${
-                    activeView === item.id
-                      ? 'bg-blue-700 text-white'
-                      : 'text-blue-100 hover:bg-blue-800'
-                  }`}
-                  aria-label={item.ariaLabel}
-                  aria-current={activeView === item.id ? 'page' : undefined}
-                  title={sidebarCollapsed ? item.label : undefined}
-                >
-                  <Icon className="size-5" aria-hidden="true" />
-                  <span className={sidebarCollapsed ? 'hidden' : ''}>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* RF3.4 - Cerrar sesión */}
-        <div className={`border-t border-blue-800 ${sidebarCollapsed ? 'p-3' : 'p-4'}`}>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className={`w-full text-blue-100 hover:bg-blue-800 hover:text-white ${
-                  sidebarCollapsed ? 'justify-center px-2' : 'justify-start'
-                }`}
-                aria-label={t('auth.logout')}
-                title={sidebarCollapsed ? t('auth.logout') : undefined}
-              >
-                <LogOut className={`size-5 ${sidebarCollapsed ? '' : 'mr-3'}`} aria-hidden="true" />
-                <span className={sidebarCollapsed ? 'hidden' : ''}>{t('auth.logout')}</span>
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t('auth.logout')}?</AlertDialogTitle>
-                <AlertDialogDescription>{t('common.logoutConfirmation')}</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleLogout}>{t('auth.logout')}</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        {/* RNF26.1 - Header responsive */}
-        <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <Button
+    <>
+      <div className="flex h-dvh min-w-0 bg-gray-50 pt-[env(safe-area-inset-top)]">
+        {/* RNF26.1 - Sidebar para desktop (oculto en móvil) */}
+        <aside
+          className={`hidden lg:flex lg:flex-col bg-blue-900 text-white transition-[width] duration-200 ${
+            sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
+          }`}
+        >
+          <div className={`flex-1 overflow-y-auto ${sidebarCollapsed ? 'p-3' : 'p-6'}`}>
+            <div className="flex items-center gap-3 mb-8">
+              <button
                 type="button"
-                variant="ghost"
-                size="icon"
-                className="hidden lg:inline-flex"
                 onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+                className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-900"
                 aria-label={t(
                   sidebarCollapsed ? 'common.expandNavigationMenu' : 'common.collapseNavigationMenu'
                 )}
                 aria-expanded={!sidebarCollapsed}
-              >
-                {sidebarCollapsed ? (
-                  <Menu className="size-5" aria-hidden="true" />
-                ) : (
-                  <PanelLeftClose className="size-5" aria-hidden="true" />
+                title={t(
+                  sidebarCollapsed ? 'common.expandNavigationMenu' : 'common.collapseNavigationMenu'
                 )}
-              </Button>
-              <MobileNavigation />
-              <div className="min-w-0">
-                <h1 className="truncate text-lg sm:text-xl lg:text-2xl text-gray-900">
-                  {menuItems.find((item) => item.id === activeView)?.label || t('nav.home')}
-                </h1>
-                <p className="truncate text-xs lg:text-sm text-gray-600 mt-0.5">
-                  {t('app.tagline')}
-                </p>
+              >
+                <span className="block bg-blue-600 p-2 rounded-lg transition-colors hover:bg-blue-500">
+                  <img src={logoImage} alt="" className="h-12 w-auto" />
+                </span>
+              </button>
+              <h1 className={`text-2xl hidrosmart-logo ${sidebarCollapsed ? 'hidden' : ''}`}>
+                {t('app.name')}
+              </h1>
+            </div>
+
+            {/* Badge de rol */}
+            <div className={`mb-6 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+              {sidebarCollapsed ? (
+                <span className="text-xl" title={roleLabel} aria-label={roleLabel}>
+                  {roleIcon}
+                </span>
+              ) : (
+                <RoleBadge />
+              )}
+            </div>
+
+            <nav className="space-y-2" role="navigation" aria-label={t('common.mainNavigation')}>
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(viewPaths[item.id])}
+                    className={`w-full flex items-center rounded-lg py-3 transition-colors ${
+                      sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-4'
+                    } ${
+                      activeView === item.id
+                        ? 'bg-blue-700 text-white'
+                        : 'text-blue-100 hover:bg-blue-800'
+                    }`}
+                    aria-label={item.ariaLabel}
+                    aria-current={activeView === item.id ? 'page' : undefined}
+                    title={sidebarCollapsed ? item.label : undefined}
+                  >
+                    <Icon className="size-5" aria-hidden="true" />
+                    <span className={sidebarCollapsed ? 'hidden' : ''}>{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* RF3.4 - Cerrar sesión */}
+          <div className={`border-t border-blue-800 ${sidebarCollapsed ? 'p-3' : 'p-4'}`}>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={`w-full text-blue-100 hover:bg-blue-800 hover:text-white ${
+                    sidebarCollapsed ? 'justify-center px-2' : 'justify-start'
+                  }`}
+                  aria-label={t('auth.logout')}
+                  title={sidebarCollapsed ? t('auth.logout') : undefined}
+                >
+                  <LogOut
+                    className={`size-5 ${sidebarCollapsed ? '' : 'mr-3'}`}
+                    aria-hidden="true"
+                  />
+                  <span className={sidebarCollapsed ? 'hidden' : ''}>{t('auth.logout')}</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('auth.logout')}?</AlertDialogTitle>
+                  <AlertDialogDescription>{t('common.logoutConfirmation')}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleLogout}>{t('auth.logout')}</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div className="app-content-column flex-1 min-w-0 flex flex-col overflow-hidden">
+          {/* RNF26.1 - Header responsive */}
+          <header className="app-header bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="min-w-0">
+                  <h1 className="truncate text-lg sm:text-xl lg:text-2xl text-gray-900">
+                    {menuItems.find((item) => item.id === activeView)?.label || t('nav.home')}
+                  </h1>
+                  <p className="truncate text-xs lg:text-sm text-gray-600 mt-0.5">
+                    {t('app.tagline')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Usuario info */}
+              <div className="flex shrink-0 items-center gap-2 sm:gap-3 ml-auto">
+                {homes.length > 0 && (
+                  <Select value={selectedHomeId} onValueChange={setSelectedHomeId}>
+                    <SelectTrigger
+                      className="hidden h-10 w-[10rem] sm:flex"
+                      aria-label={t('homes.home')}
+                    >
+                      <SelectValue placeholder={t('homes.home')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {homes.map((home) => (
+                        <SelectItem key={home.homeId} value={home.homeId}>
+                          {home.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <button
+                  type="button"
+                  onClick={() => navigate(viewPaths.settings)}
+                  className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                  aria-label={t('common.userProfile')}
+                >
+                  <div className="hidden md:block text-right">
+                    <div className="text-sm text-gray-600">{userInfo.name}</div>
+                  </div>
+                  <div
+                    className={`size-10 ${userInfo.color} rounded-full flex items-center justify-center text-white transition-opacity`}
+                    aria-hidden="true"
+                  >
+                    {userInfo.avatarDataUrl ? (
+                      <img
+                        src={userInfo.avatarDataUrl}
+                        alt=""
+                        className="size-full rounded-full object-cover"
+                      />
+                    ) : (
+                      userInfo.initials
+                    )}
+                  </div>
+                </button>
               </div>
             </div>
+          </header>
 
-            {/* Usuario info */}
-            <div className="flex shrink-0 items-center gap-2 sm:gap-3 ml-auto">
-              {homes.length > 0 && (
-                <Select value={selectedHomeId} onValueChange={setSelectedHomeId}>
-                  <SelectTrigger
-                    className="hidden h-10 w-[10rem] sm:flex"
-                    aria-label={t('homes.home')}
-                  >
-                    <SelectValue placeholder={t('homes.home')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {homes.map((home) => (
-                      <SelectItem key={home.homeId} value={home.homeId}>
-                        {home.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <button
-                type="button"
-                onClick={() => navigate(viewPaths.settings)}
-                className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-                aria-label={t('common.userProfile')}
-              >
-                <div className="hidden md:block text-right">
-                  <div className="text-sm text-gray-600">{userInfo.name}</div>
-                </div>
-                <div
-                  className={`size-10 ${userInfo.color} rounded-full flex items-center justify-center text-white transition-opacity`}
-                  aria-hidden="true"
-                >
-                  {userInfo.avatarDataUrl ? (
-                    <img
-                      src={userInfo.avatarDataUrl}
-                      alt=""
-                      className="size-full rounded-full object-cover"
-                    />
-                  ) : (
-                    userInfo.initials
-                  )}
-                </div>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* RNF26.2 - Content Area con scroll */}
-        <main
-          className="flex-1 min-w-0 overflow-y-auto p-3 sm:p-4 lg:p-6"
-          role="main"
-          aria-label={t('common.mainContent')}
-        >
-          <LazyViewErrorBoundary
-            key={activeView}
-            title={t('common.featureLoadError')}
-            retryLabel={t('common.retry')}
+          {/* RNF26.2 - Content Area con scroll */}
+          <main
+            className="app-main flex-1 min-w-0 overflow-y-auto p-3 sm:p-4 lg:p-6"
+            role="main"
+            aria-label={t('common.mainContent')}
           >
-            <Suspense
-              fallback={
-                <div className="flex min-h-40 items-center justify-center text-sm text-gray-600">
-                  <Loader2 className="mr-2 size-5 animate-spin" />
-                  {t('common.loading')}
-                </div>
-              }
+            <LazyViewErrorBoundary
+              key={activeView}
+              title={t('common.featureLoadError')}
+              retryLabel={t('common.retry')}
             >
-              {renderView()}
-            </Suspense>
-          </LazyViewErrorBoundary>
-        </main>
+              <Suspense
+                fallback={
+                  <div className="flex min-h-40 items-center justify-center text-sm text-gray-600">
+                    <Loader2 className="mr-2 size-5 animate-spin" />
+                    {t('common.loading')}
+                  </div>
+                }
+              >
+                {renderView()}
+              </Suspense>
+            </LazyViewErrorBoundary>
+          </main>
+        </div>
       </div>
-    </div>
+      <MobileNavigation />
+    </>
   );
 }

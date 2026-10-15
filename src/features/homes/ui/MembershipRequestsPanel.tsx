@@ -116,6 +116,7 @@ export function MembershipRequestsPanel() {
           <Button
             type="button"
             variant="outline"
+            className="w-full sm:w-auto"
             onClick={requestAccess}
             disabled={busyId !== null}
           >
@@ -142,15 +143,19 @@ export function MembershipRequestsPanel() {
                   Solicitada: {formatDate(request.requestedAt)}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={request.status === 'Pending' ? 'secondary' : 'outline'}>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Badge
+                  className="self-start sm:self-auto"
+                  variant={request.status === 'Pending' ? 'secondary' : 'outline'}
+                >
                   {request.status}
                 </Badge>
                 {request.status === 'Pending' && (
-                  <>
+                  <div className="flex w-full gap-2 sm:w-auto">
                     <Button
                       type="button"
                       size="sm"
+                      className="min-w-0 flex-1 px-2 sm:flex-initial"
                       onClick={() => answerRequest(request.requestId, 'Approved')}
                       disabled={busyId !== null}
                     >
@@ -160,12 +165,13 @@ export function MembershipRequestsPanel() {
                       type="button"
                       size="sm"
                       variant="outline"
+                      className="min-w-0 flex-1 px-2 sm:flex-initial"
                       onClick={() => answerRequest(request.requestId, 'Rejected')}
                       disabled={busyId !== null}
                     >
                       <X className="mr-1 size-4" /> Rechazar
                     </Button>
-                  </>
+                  </div>
                 )}
               </div>
             </div>

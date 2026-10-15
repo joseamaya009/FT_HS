@@ -1,15 +1,19 @@
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { BackHandler, Platform, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 import { webViewBaseUrl, webViewOriginWhitelist } from '../config/webView';
 import { colors } from '../constants/colors';
 import { bleProvisioning } from '../services/bleProvisioning';
 import webBundle from '../webBundle';
+import { WebViewError } from './WebViewError';
 import { WebViewLoading } from './WebViewLoading';
 
 export function HidroSmartWebView() {
   const webViewRef = useRef(null);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [webViewKey, setWebViewKey] = useState(0);
 
   const sendToWeb = (type, payload = {}) => {
     const message = JSON.stringify({ type, payload });
@@ -67,19 +71,54 @@ export function HidroSmartWebView() {
 
   useEffect(() => () => bleProvisioning.destroy(), []);
 
+  useEffect(() => {
+    if (Platform.OS !== 'android') return undefined;
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!canGoBack) return false;
+      webViewRef.current?.goBack();
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [canGoBack]);
+
+  if (loadError) {
+    return (
+      <WebViewError
+        message={loadError}
+        onRetry={() => {
+          setLoadError('');
+          setWebViewKey((current) => current + 1);
+        }}
+      />
+    );
+  }
+
   return (
     <WebView
+      key={webViewKey}
       ref={webViewRef}
       originWhitelist={webViewOriginWhitelist}
       source={{ html: webBundle, baseUrl: webViewBaseUrl }}
       style={styles.webview}
       javaScriptEnabled
       domStorageEnabled
-      allowFileAccess
-      allowUniversalAccessFromFileURLs
       setSupportMultipleWindows={false}
       startInLoadingState
       onMessage={handleMessage}
+      onLoadStart={() => setLoadError('')}
+      onNavigationStateChange={(state) => setCanGoBack(state.canGoBack)}
+      onError={(event) => {
+        setLoadError(event.nativeEvent.description || 'No se pudo cargar HidroSmart.');
+      }}
+      onHttpError={(event) => {
+        const statusCode = event.nativeEvent.statusCode;
+        if (statusCode >= 500) {
+          setLoadError(`El servidor respondió con el error ${statusCode}.`);
+        }
+      }}
+      onRenderProcessGone={() => setLoadError('Android detuvo el contenido de la aplicación.')}
       renderLoading={() => <WebViewLoading />}
     />
   );
