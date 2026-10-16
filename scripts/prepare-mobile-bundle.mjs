@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendRoot = path.resolve(__dirname, '..');
+const repositoryRoot = path.resolve(frontendRoot, '..', '..');
 const webRoot = frontendRoot;
 const distRoot = path.join(frontendRoot, '.web-dist');
 const outFile = path.join(frontendRoot, 'src', 'mobile', 'webBundle.js');
@@ -21,7 +22,7 @@ const mimeTypes = new Map([
   ['.webp', 'image/webp'],
   ['.woff', 'font/woff'],
   ['.woff2', 'font/woff2'],
-  ['.ttf', 'font/ttf']
+  ['.ttf', 'font/ttf'],
 ]);
 
 function assertPathExists(target, label) {
@@ -30,9 +31,11 @@ function assertPathExists(target, label) {
   }
 }
 
-function readEnvValue(name) {
-  for (const fileName of ['.env.local', '.env']) {
-    const filePath = path.join(frontendRoot, fileName);
+function readEnvValue(
+  name,
+  filePaths = [path.join(frontendRoot, '.env.local'), path.join(frontendRoot, '.env')]
+) {
+  for (const filePath of filePaths) {
     if (!fs.existsSync(filePath)) continue;
 
     const line = fs
@@ -85,6 +88,17 @@ assertPathExists(webRoot, 'Proyecto web');
 // teléfono físico intentaría llamar a localhost en lugar del equipo de
 // desarrollo. La variable de entorno del proceso tiene prioridad para CI.
 const mobileApiUrl = process.env.EXPO_PUBLIC_API_URL || readEnvValue('EXPO_PUBLIC_API_URL');
+const repositoryEnv = [path.join(repositoryRoot, '.env')];
+const mqttDeviceHost =
+  process.env.VITE_MQTT_DEVICE_HOST?.trim() ||
+  process.env.MQTT_DEVICE_HOST?.trim() ||
+  readEnvValue('MQTT_DEVICE_HOST', repositoryEnv) ||
+  readEnvValue('VITE_MQTT_DEVICE_HOST');
+const mqttDevicePort =
+  process.env.VITE_MQTT_DEVICE_PORT?.trim() ||
+  process.env.MQTT_DEVICE_PORT?.trim() ||
+  readEnvValue('MQTT_DEVICE_PORT', repositoryEnv) ||
+  readEnvValue('VITE_MQTT_DEVICE_PORT');
 if (mobileApiUrl) {
   try {
     const hostname = new URL(mobileApiUrl).hostname;
@@ -101,25 +115,39 @@ const buildEnv = {
   ...process.env,
   HIDROSMART_MOBILE_BUNDLE: 'true',
   ...(mobileApiUrl ? { VITE_API_URL: mobileApiUrl } : {}),
+  ...(mqttDeviceHost ? { VITE_MQTT_DEVICE_HOST: mqttDeviceHost } : {}),
+  ...(mqttDevicePort ? { VITE_MQTT_DEVICE_PORT: mqttDevicePort } : {}),
 };
 
+if (!mqttDeviceHost) {
+  console.warn(
+    '[HidroSmart móvil] No se encontró VITE_MQTT_DEVICE_HOST ni MQTT_DEVICE_HOST; el aprovisionamiento BLE no podrá enviar el host del broker.'
+  );
+}
+
 if (process.platform === 'win32') {
-  execFileSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', `npm run build -- --outDir .web-dist --emptyOutDir`], {
-    cwd: webRoot,
-    env: buildEnv,
-    stdio: 'inherit'
-  });
+  execFileSync(
+    process.env.ComSpec ?? 'cmd.exe',
+    ['/d', '/s', '/c', `npm run build -- --outDir .web-dist --emptyOutDir`],
+    {
+      cwd: webRoot,
+      env: buildEnv,
+      stdio: 'inherit',
+    }
+  );
 } else {
   execFileSync('npm', ['run', 'build', '--', '--outDir', distRoot, '--emptyOutDir'], {
     cwd: webRoot,
     env: buildEnv,
-    stdio: 'inherit'
+    stdio: 'inherit',
   });
 }
 assertPathExists(path.join(distRoot, 'index.html'), 'Build web');
 
 const allDistFiles = listFiles(distRoot);
-const assetFiles = allDistFiles.filter((file) => path.relative(distRoot, file).replace(/\\/g, '/').startsWith('assets/'));
+const assetFiles = allDistFiles.filter((file) =>
+  path.relative(distRoot, file).replace(/\\/g, '/').startsWith('assets/')
+);
 let html = fs.readFileSync(path.join(distRoot, 'index.html'), 'utf8');
 
 html = html.replace(/<link\s+rel="stylesheet"\s+crossorigin\s+href="([^"]+)">/g, (_, href) => {
@@ -129,16 +157,26 @@ html = html.replace(/<link\s+rel="stylesheet"\s+crossorigin\s+href="([^"]+)">/g,
   return `<style>${css}</style>`;
 });
 
-html = html.replace(/<script\s+type="module"\s+crossorigin\s+src="([^"]+)"><\/script>/g, (_, src) => {
-  const jsPath = path.join(distRoot, src.replace(/^\//, ''));
-  let js = fs.readFileSync(jsPath, 'utf8');
-  js = replaceAssetReferences(js, assetFiles);
-  return `<script type="module">${js}</script>`;
-});
+html = html.replace(
+  /<script\s+type="module"\s+crossorigin\s+src="([^"]+)"><\/script>/g,
+  (_, src) => {
+    const jsPath = path.join(distRoot, src.replace(/^\//, ''));
+    let js = fs.readFileSync(jsPath, 'utf8');
+    js = replaceAssetReferences(js, assetFiles);
+    return `<script type="module">${js}</script>`;
+  }
+);
 
 html = replaceAssetReferences(html, assetFiles);
-html = html.replace('</head>', '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"></head>');
+html = html.replace(
+  '</head>',
+  '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"></head>'
+);
 
 fs.mkdirSync(path.dirname(outFile), { recursive: true });
-fs.writeFileSync(outFile, `const webBundle = ${JSON.stringify(html)};\n\nexport default webBundle;\n`, 'utf8');
+fs.writeFileSync(
+  outFile,
+  `const webBundle = ${JSON.stringify(html)};\n\nexport default webBundle;\n`,
+  'utf8'
+);
 console.log(`Bundle web generado en ${outFile}`);
