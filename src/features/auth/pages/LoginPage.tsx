@@ -234,11 +234,11 @@ export function LoginScreen({
               if (value === 'register') onRegisterClick();
             }}
           >
-            <TabsList className="mx-4 mt-4 grid w-[calc(100%-2rem)] grid-cols-2 rounded-xl bg-slate-100 p-1 mobile-equal-tabs [--mobile-tabs:2]">
-              <TabsTrigger value="login" className="min-h-10 w-full text-sm">
+            <TabsList className="auth-mode-switch mx-4 mt-4 rounded-xl bg-slate-100 p-1">
+              <TabsTrigger value="login" className="auth-mode-switch-item">
                 {t('auth.login')}
               </TabsTrigger>
-              <TabsTrigger value="register" className="min-h-10 w-full text-sm">
+              <TabsTrigger value="register" className="auth-mode-switch-item">
                 {t('auth.register')}
               </TabsTrigger>
             </TabsList>
