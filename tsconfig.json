@@ -19,19 +19,18 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
       "@/*": [
-        "src/*"
+        "./src/*"
       ],
       "@app/*": [
-        "src/app/*"
+        "./src/app/*"
       ],
       "@features/*": [
-        "src/features/*"
+        "./src/features/*"
       ],
       "@shared/*": [
-        "src/shared/*"
+        "./src/shared/*"
       ]
     }
   },
