@@ -792,6 +792,8 @@
     "descriptionPlaceholder": "Describe your issue or question with as much detail as possible...",
     "responseTimeNotice": "A technician will review your request and you will receive a response within 24-48 hours depending on priority.",
     "open": "Open",
+    "inReview": "In review",
+    "finished": "Finished",
     "inProgress": "In Progress",
     "closed": "Closed",
     "all": "All ({{count}})",
