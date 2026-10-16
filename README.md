@@ -44,3 +44,8 @@ por la red; `localhost` apunta al propio teléfono.
 
 Usa `.env.example` como plantilla. No confirmes archivos `.env`, bundles
 generados ni directorios de compilación Android.
+
+## Documentación
+
+Consulta el [índice de documentación del frontend](docs/README.md) para rutas,
+módulos, autenticación, responsive, móvil y pruebas.
