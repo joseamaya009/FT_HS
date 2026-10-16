@@ -32,7 +32,6 @@ type TicketResponse = {
   message: string;
   createdAt: string;
 };
-type TicketSort = 'createdAt' | 'title' | 'status' | 'priority';
 const DEFAULT_PAGE_SIZE = 10;
 const EMPTY_PAGINATION: CollectionPagination = {
   page: 1,
@@ -45,19 +44,17 @@ export function SupportTickets({ management = false }: { management?: boolean })
   const { t } = useTranslation();
   const statusLabel: Record<string, string> = {
     Abierto: t('support.open'),
-    'En Proceso': t('support.inProgress'),
-    Resuelto: t('support.resolved'),
-    Cerrado: t('support.closed'),
+    'En Proceso': t('support.inReview'),
+    Finalizado: t('support.finished'),
+    Resuelto: t('support.finished'),
+    Cerrado: t('support.finished'),
   };
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [categories, setCategories] = useState<Array<{ categoryId: string; name: string }>>([]);
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [sort, setSort] = useState<TicketSort>('createdAt');
-  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [pagination, setPagination] = useState<CollectionPagination>(EMPTY_PAGINATION);
   const [loading, setLoading] = useState(false);
   const [updatingTicketId, setUpdatingTicketId] = useState<string | null>(null);
@@ -72,11 +69,8 @@ export function SupportTickets({ management = false }: { management?: boolean })
     const query = new URLSearchParams({
       page: String(page),
       pageSize: String(pageSize),
-      sort,
-      order,
     });
     if (filter !== 'all') query.set('status', filter);
-    if (priorityFilter !== 'all') query.set('priority', priorityFilter);
     try {
       const response = await supportApi.list(query.toString());
       setTickets(response.data as Ticket[]);
@@ -86,7 +80,7 @@ export function SupportTickets({ management = false }: { management?: boolean })
     } finally {
       setLoading(false);
     }
-  }, [filter, order, page, pageSize, priorityFilter, sort, t]);
+  }, [filter, page, pageSize, t]);
 
   useEffect(() => {
     void load();
@@ -128,7 +122,7 @@ export function SupportTickets({ management = false }: { management?: boolean })
   const updateStatus = async (ticketId: string, status: string) => {
     setUpdatingTicketId(ticketId);
     try {
-      await supportApi.update(ticketId, { status });
+      await supportApi.update(ticketId, { status: status === 'Finalizado' ? 'Resuelto' : status });
       toast.success(t('support.statusUpdated'));
       await load();
     } catch (error) {
@@ -237,7 +231,7 @@ export function SupportTickets({ management = false }: { management?: boolean })
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        {['all', 'Abierto', 'En Proceso', 'Resuelto', 'Cerrado'].map((value) => (
+        {['all', 'Abierto', 'En Proceso', 'Finalizado'].map((value) => (
           <Button
             key={value}
             variant={filter === value ? 'default' : 'outline'}
@@ -252,42 +246,6 @@ export function SupportTickets({ management = false }: { management?: boolean })
               : statusLabel[value] || value}
           </Button>
         ))}
-        <select
-          aria-label={t('support.priorityFilter')}
-          className="h-9 rounded-md border bg-background px-3 text-sm"
-          value={priorityFilter}
-          onChange={(event) => {
-            setPriorityFilter(event.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="all">{t('support.allPriorities')}</option>
-          <option value="Alta">{t('support.high')}</option>
-          <option value="Media">{t('support.medium')}</option>
-          <option value="Baja">{t('support.low')}</option>
-        </select>
-        <select
-          aria-label={t('support.sortBy')}
-          className="h-9 rounded-md border bg-background px-3 text-sm"
-          value={sort}
-          onChange={(event) => {
-            setSort(event.target.value as TicketSort);
-            setPage(1);
-          }}
-        >
-          <option value="createdAt">{t('support.sortCreatedAt')}</option>
-          <option value="title">{t('support.sortTitle')}</option>
-          <option value="priority">{t('support.sortPriority')}</option>
-          <option value="status">{t('support.sortStatus')}</option>
-        </select>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setOrder((current) => (current === 'asc' ? 'desc' : 'asc'))}
-        >
-          {order === 'asc' ? t('support.ascending') : t('support.descending')}
-        </Button>
       </div>
       <Card>
         <CardHeader>
@@ -316,14 +274,17 @@ export function SupportTickets({ management = false }: { management?: boolean })
                       <select
                         aria-label={t('support.ticketStatusAria', { title: ticket.title })}
                         className="h-8 rounded-md border px-2 text-xs"
-                        value={ticket.status}
+                        value={
+                          ticket.status === 'Resuelto' || ticket.status === 'Cerrado'
+                            ? 'Finalizado'
+                            : ticket.status
+                        }
                         disabled={updatingTicketId === ticket.ticketId}
                         onChange={(event) => updateStatus(ticket.ticketId, event.target.value)}
                       >
                         <option value="Abierto">{t('support.open')}</option>
-                        <option value="En Proceso">{t('support.inProgress')}</option>
-                        <option value="Resuelto">{t('support.resolved')}</option>
-                        <option value="Cerrado">{t('support.closed')}</option>
+                        <option value="En Proceso">{t('support.inReview')}</option>
+                        <option value="Finalizado">{t('support.finished')}</option>
                       </select>
                     )}
                   </div>
