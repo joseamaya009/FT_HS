@@ -12,12 +12,7 @@
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": false,
       "package": "com.anonymous.hidrosmartmobile"
-    },
-    "androidNavigationBar": {
-      "backgroundColor": "#020617",
-      "barStyle": "light-content"
     },
     "web": {
       "bundler": "metro"
