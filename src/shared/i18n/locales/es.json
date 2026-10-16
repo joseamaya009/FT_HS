@@ -778,6 +778,8 @@
     "descriptionPlaceholder": "Describe tu problema o consulta con el mayor detalle posible...",
     "responseTimeNotice": "Un técnico revisará tu solicitud y recibirás una respuesta en un plazo máximo de 24-48 horas según la prioridad.",
     "open": "Abierto",
+    "inReview": "En revisión",
+    "finished": "Finalizado",
     "inProgress": "En Proceso",
     "closed": "Cerrado",
     "all": "Todos ({{count}})",

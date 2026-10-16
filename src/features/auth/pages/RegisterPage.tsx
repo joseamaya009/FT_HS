@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
@@ -213,9 +214,17 @@ export function RegisterScreen({
         </div>
 
         <Card className="w-full max-w-2xl justify-self-center overflow-hidden rounded-2xl border border-white/70 shadow-xl">
-          <div className="mx-4 mt-4 flex min-h-11 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-sm font-semibold text-blue-800">
-            Registrarse
-          </div>
+          <nav
+            className="auth-mode-switch mx-4 mt-4"
+            aria-label={`${t('auth.login')} / ${t('auth.register')}`}
+          >
+            <Link className="auth-mode-switch-item" to="/login">
+              {t('auth.login')}
+            </Link>
+            <span className="auth-mode-switch-item is-active" aria-current="page">
+              {t('auth.register')}
+            </span>
+          </nav>
           <CardHeader className="px-5 pt-5 pb-3 sm:px-6 sm:pt-6">
             <CardTitle>{t('auth.createAccountTitle')}</CardTitle>
             <CardDescription>
