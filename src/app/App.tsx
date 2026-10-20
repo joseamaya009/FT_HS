@@ -11,6 +11,7 @@ import logoImage from '../imports/aaa-Photoroom-1.png';
 import { useAuth } from '@app/providers/AuthProvider';
 import { ActiveHomeProvider } from '@app/providers/ActiveHomeProvider';
 import { VerifyEmailPage } from '@features/auth/pages/VerifyEmailPage';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 type RegistrationDraft = {
   name: string;
@@ -180,6 +181,7 @@ export default function App() {
       </Routes>
       <FloatingLanguageSwitcher />
       <Toaster />
+      <SpeedInsights />
     </>
   );
 }
