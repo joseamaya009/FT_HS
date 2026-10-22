@@ -9,14 +9,14 @@ móvil.
 
 ## Comandos locales
 
-Desde la raíz del repositorio:
+Desde la raíz de `FT_HS`:
 
 ```powershell
-npm.cmd --prefix FT_HS/frontend run lint
-npm.cmd --prefix FT_HS/frontend run typecheck
-npm.cmd --prefix FT_HS/frontend test
-npm.cmd --prefix FT_HS/frontend run build
-npm.cmd --prefix FT_HS/frontend run mobile:prepare
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd test
+npm.cmd run build
+npm.cmd run mobile:prepare
 ```
 
 ## Cobertura que debe incorporarse
