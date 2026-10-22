@@ -3,8 +3,8 @@
 ## Alcance
 
 Describe cómo la interfaz web llama al backend y conserva la sesión. La fuente
-principal del cliente compartido es `frontend/src/shared/http/apiClient.ts`;
-la sesión de React se administra en `frontend/src/app/providers/AuthProvider.tsx`.
+principal del cliente compartido es `src/shared/http/apiClient.ts`;
+la sesión de React se administra en `src/app/providers/AuthProvider.tsx`.
 Los adaptadores de cada módulo viven junto a su feature.
 
 ## Configuración
@@ -68,6 +68,6 @@ tener un rol global y una membresía distinta en cada hogar.
 | 403 CSRF | Cookie `hidrosmart_csrf`, encabezado `X-CSRF-Token` y origen permitido. |
 | Reporte vacío o descarga fallida | Formato de respuesta, `getBlob` y permisos `reports.read`. |
 
-El inventario de rutas está en el [contrato OpenAPI del backend](https://github.com/joseamaya009/Backend-Hidrosmart/blob/hu-11-dev/docs/openapi.yaml);
+El inventario de rutas está en el [resumen del contrato HTTP del backend](https://github.com/joseamaya009/BK_HS/blob/develop/docs/api.md);
 la matriz de permisos del servidor, en
-[la guía de permisos del backend](https://github.com/joseamaya009/Backend-Hidrosmart/blob/hu-11-dev/docs/07_autorizacion-y-permisos.md).
+[la documentación de arquitectura del backend](https://github.com/joseamaya009/BK_HS/blob/develop/docs/README.md).
