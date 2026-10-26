@@ -4,12 +4,19 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { authApi, SESSION_EXPIRED_EVENT, userApi } from '@shared/http/apiClient';
+import {
+  ApiError,
+  authApi,
+  SESSION_EXPIRED_EVENT,
+  sessionTokens,
+  userApi,
+} from '@shared/http/apiClient';
 import {
   can as hasPermission,
   normalizePermissions,
@@ -46,6 +53,8 @@ export type RegistrationResult = { message: string; email: string };
 type AuthContextValue = {
   session: AuthSession | null;
   isInitializing: boolean;
+  initializationError: boolean;
+  retryInitialization: () => Promise<void>;
   isAuthenticated: boolean;
   can: (permission: string) => boolean;
   refreshSession: () => Promise<AuthSession>;
@@ -62,11 +71,14 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [initializationError, setInitializationError] = useState(false);
+  const initializationAttempt = useRef(0);
   const queryClient = useQueryClient();
   const { i18n } = useTranslation();
 
   const clearLocalSession = useCallback(() => {
     queryClient.clear();
+    sessionTokens.clear();
     setSession(null);
   }, [queryClient]);
 
@@ -81,7 +93,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     setSession(nextSession);
     if (nextSession.preferences?.language) {
-      await i18n.changeLanguage(nextSession.preferences.language);
+      try {
+        await i18n.changeLanguage(nextSession.preferences.language);
+      } catch {
+        // Un fallo al cargar traducciones no invalida la sesión autenticada.
+      }
     }
     return nextSession;
   }, [i18n]);
@@ -99,51 +115,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return response.data;
   }, []);
 
-  const restoreFromRefreshToken = useCallback(async () => {
-    await authApi.refresh();
-    return refreshSession();
-  }, [refreshSession]);
-
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
-    } catch {
-      // La sesión puede haber sido revocada desde otro dispositivo; en ambos
-      // casos la salida local debe completarse y no dejar tokens reutilizables.
-    } finally {
-      clearLocalSession();
+    } catch (error) {
+      // Una sesión revocada ya no puede utilizarse. Los fallos de red, CSRF o
+      // rate limit se muestran al usuario para que pueda reintentar.
+      if (!(error instanceof ApiError) || error.status !== 401) throw error;
     }
+    clearLocalSession();
   }, [clearLocalSession]);
 
-  useEffect(() => {
-    let active = true;
-    const initialize = async () => {
-      try {
-        try {
-          try {
-            await refreshSession();
-          } catch (error) {
-            // Un access token vencido no debe cerrar la sesión si el refresh
-            // token sigue vigente. El cliente HTTP también usa este mismo flujo.
-            throw error;
-          }
-        } catch {
-          await restoreFromRefreshToken();
-        }
-      } catch {
+  const retryInitialization = useCallback(async () => {
+    const attempt = ++initializationAttempt.current;
+    setIsInitializing(true);
+    setInitializationError(false);
+    try {
+      // El cliente HTTP intenta renovar el access token si /users/me responde 401.
+      await refreshSession();
+    } catch (error) {
+      if (attempt !== initializationAttempt.current) return;
+      if (error instanceof ApiError && error.status === 401) {
         clearLocalSession();
-      } finally {
-        if (active) setIsInitializing(false);
+      } else {
+        // No confundir un fallo de red, 429 o 5xx con una sesión revocada.
+        setInitializationError(true);
       }
-    };
-    initialize();
-    return () => {
-      active = false;
-    };
-  }, [clearLocalSession, refreshSession, restoreFromRefreshToken]);
+    } finally {
+      if (attempt === initializationAttempt.current) setIsInitializing(false);
+    }
+  }, [clearLocalSession, refreshSession]);
 
   useEffect(() => {
-    const handleExpiredSession = () => clearLocalSession();
+    void retryInitialization();
+    return () => {
+      initializationAttempt.current += 1;
+    };
+  }, [retryInitialization]);
+
+  useEffect(() => {
+    const handleExpiredSession = () => {
+      clearLocalSession();
+      setInitializationError(false);
+    };
     window.addEventListener(SESSION_EXPIRED_EVENT, handleExpiredSession);
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleExpiredSession);
   }, [clearLocalSession]);
@@ -152,6 +166,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       session,
       isInitializing,
+      initializationError,
+      retryInitialization,
       isAuthenticated: Boolean(session),
       can: (permission) => hasPermission(session?.permissions, permission),
       refreshSession,
@@ -164,7 +180,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await authApi.resetPassword(token, password);
       },
     }),
-    [isInitializing, login, logout, refreshSession, register, session]
+    [
+      initializationError,
+      isInitializing,
+      login,
+      logout,
+      refreshSession,
+      register,
+      retryInitialization,
+      session,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -2,7 +2,9 @@
   "app": {
     "name": "HidroSmart",
     "tagline": "Sistema di Monitoraggio Intelligente dell'Acqua",
-    "loadingSystem": "Caricamento sistema..."
+    "loadingSystem": "Caricamento sistema...",
+    "connectionErrorTitle": "Impossibile verificare la sessione",
+    "connectionErrorDescription": "Impossibile contattare il servizio. La sessione non è stata chiusa; controlla la connessione e riprova."
   },
   "login": {
     "description": "Monitora e controlla il tuo consumo d'acqua con intelligenza",
@@ -15,6 +17,7 @@
     "login": "Accedi",
     "register": "Registrati",
     "logout": "Esci",
+    "logoutError": "Impossibile uscire. Riprova.",
     "email": "Email",
     "password": "Password",
     "confirmPassword": "Conferma Password",

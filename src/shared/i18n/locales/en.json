@@ -2,7 +2,9 @@
   "app": {
     "name": "HidroSmart",
     "tagline": "Intelligent Water Monitoring System",
-    "loadingSystem": "Loading system..."
+    "loadingSystem": "Loading system...",
+    "connectionErrorTitle": "Could not check your session",
+    "connectionErrorDescription": "We could not reach the service. Your session has not been closed; check your connection and try again."
   },
   "login": {
     "description": "Monitor and control your water usage with intelligence",
@@ -15,6 +17,7 @@
     "login": "Sign In",
     "register": "Register",
     "logout": "Sign Out",
+    "logoutError": "Could not sign out. Please try again.",
     "email": "Email Address",
     "password": "Password",
     "confirmPassword": "Confirm Password",
