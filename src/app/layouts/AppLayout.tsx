@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import {
   Home,
   BarChart3,
@@ -316,9 +317,14 @@ export function DashboardLayout({ session, onLogout }: DashboardLayoutProps) {
   };
 
   // RF3.4 - Función para cerrar sesión de manera segura
-  const handleLogout = () => {
-    // RF19.1 - Registrar cierre de sesión en auditoría
-    onLogout();
+  const handleLogout = async () => {
+    try {
+      await onLogout();
+    } catch (error) {
+      toast.error(t('auth.logoutError'), {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
   };
 
   const RoleBadge = () => (
