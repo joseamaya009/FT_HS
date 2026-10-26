@@ -11,7 +11,6 @@ import logoImage from '../imports/aaa-Photoroom-1.png';
 import { useAuth } from '@app/providers/AuthProvider';
 import { ActiveHomeProvider } from '@app/providers/ActiveHomeProvider';
 import { VerifyEmailPage } from '@features/auth/pages/VerifyEmailPage';
-import { SpeedInsights } from '@vercel/speed-insights/react';
 
 type RegistrationDraft = {
   name: string;
@@ -48,6 +47,26 @@ function LoadingScreen() {
         <p className="text-gray-600">{t('app.loadingSystem')}</p>
       </div>
     </div>
+  );
+}
+
+function InitializationErrorScreen() {
+  const { t } = useTranslation();
+  const { retryInitialization } = useAuth();
+  return (
+    <main className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-100 p-4">
+      <section className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
+        <h1 className="text-2xl font-semibold text-blue-900">{t('app.connectionErrorTitle')}</h1>
+        <p className="mt-3 text-slate-600">{t('app.connectionErrorDescription')}</p>
+        <button
+          type="button"
+          onClick={() => void retryInitialization()}
+          className="mt-6 rounded-xl bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
+        >
+          {t('common.retry')}
+        </button>
+      </section>
+    </main>
   );
 }
 
@@ -162,8 +181,9 @@ function NotFoundScreen() {
 
 // Router central: la URL representa la pantalla y las guardas bloquean enlaces directos.
 export default function App() {
-  const { isInitializing, isAuthenticated } = useAuth();
+  const { isInitializing, initializationError, isAuthenticated } = useAuth();
   if (isInitializing) return <LoadingScreen />;
+  if (initializationError) return <InitializationErrorScreen />;
 
   return (
     <>
@@ -181,7 +201,6 @@ export default function App() {
       </Routes>
       <FloatingLanguageSwitcher />
       <Toaster />
-      <SpeedInsights />
     </>
   );
 }
