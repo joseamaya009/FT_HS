@@ -399,6 +399,16 @@ export function AccountSettings({ roles, homeId }: AccountSettingsProps) {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      toast.error(t('auth.logoutError'), {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  };
+
   const handleExportData = async () => {
     setPrivacyActionLoading(true);
     try {
@@ -506,7 +516,7 @@ export function AccountSettings({ roles, homeId }: AccountSettingsProps) {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                <AlertDialogAction onClick={() => void logout()}>
+                <AlertDialogAction onClick={() => void handleLogout()}>
                   {t('auth.logout')}
                 </AlertDialogAction>
               </AlertDialogFooter>

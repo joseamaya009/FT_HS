@@ -9,8 +9,7 @@ out/
 src/mobile/webBundle.js
 
 # Local environment files
-.env
-.env.*
+
 
 !.env.example
 *.local
