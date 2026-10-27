@@ -63,7 +63,7 @@
     "cmdk": "1.1.1",
     "date-fns": "3.6.0",
     "embla-carousel-react": "8.6.0",
-    "expo": "~57.0.30",
+    "expo": "~57.0.31",
     "expo-dev-client": "~57.0.20",
     "expo-navigation-bar": "~57.0.3",
     "expo-system-ui": "~57.0.4",
@@ -94,7 +94,6 @@
     "vaul": "1.1.2"
   },
   "devDependencies": {
-    "@expo/config-plugins": "~57.0.10",
     "@tailwindcss/vite": "4.1.12",
     "@types/react": "~19.2.4",
     "@types/react-dom": "~19.2.3",
