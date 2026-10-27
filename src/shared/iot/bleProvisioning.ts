@@ -115,11 +115,9 @@ export async function connectBleProvisioning(
   }
 
   const device = await bluetooth.requestDevice({
-    // Windows puede registrar el servicio BLE, pero Chrome/Edge no siempre lo
-    // incluye en el filtro del selector cuando llega desde scan response.
-    // Dejamos que el usuario seleccione el equipo y validamos el servicio al
-    // conectarnos; asi no aparece el selector vacio aunque el ESP32 anuncie.
-    acceptAllDevices: true,
+    // El firmware anuncia este prefijo; evita mostrar equipos BLE ajenos en
+    // el selector del navegador.
+    filters: [{ namePrefix: 'HidroSmart-' }],
     optionalServices: [BLE_SERVICE_UUID],
   });
   if (!device.gatt) throw new Error('El dispositivo BLE no expone un servidor GATT.');
