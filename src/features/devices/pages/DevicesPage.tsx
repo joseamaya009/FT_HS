@@ -20,6 +20,8 @@ import {
   Clock3,
   Cpu,
   Droplets,
+  Eye,
+  EyeOff,
   Gauge,
   History,
   Loader2,
@@ -138,8 +140,12 @@ export function DeviceManagement({
   const [bleWriting, setBleWriting] = useState(false);
   const [bleSsid, setBleSsid] = useState('');
   const [blePassword, setBlePassword] = useState('');
+  const [showBlePassword, setShowBlePassword] = useState(false);
   const [provisioningUnlinked, setProvisioningUnlinked] = useState(false);
-  const claimingHardwareIdRef = useRef<string | null>(null);
+  const claimingHardwareRef = useRef<{
+    hardwareId: string;
+    promise: Promise<Partial<Device> | null>;
+  } | null>(null);
   const devicesRequestInFlightRef = useRef(false);
   const devicesViewKeyRef = useRef('');
   const selectedHome = homes.find((home) => home.homeId === homeId);
@@ -261,12 +267,14 @@ export function DeviceManagement({
     event.preventDefault();
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    const identifier = String(form.get('code') || '')
+      .trim()
+      .toUpperCase();
     try {
       const response = await devicesApi.link({
         homeId,
-        code: String(form.get('code') || '')
-          .trim()
-          .toUpperCase(),
+        code: identifier,
+        hardwareId: identifier,
       });
       toast.success(t('devices.deviceLinked'));
       setLinkOpen(false);
@@ -297,6 +305,7 @@ export function DeviceManagement({
     setBleState('');
     setBleSsid('');
     setBlePassword('');
+    setShowBlePassword(false);
     setProvisioningUnlinked(!device.homeId);
   };
 
@@ -306,36 +315,47 @@ export function DeviceManagement({
     setProvisioningDevice(null);
     setProvisioningUnlinked(false);
     setBlePassword('');
+    setShowBlePassword(false);
   };
 
-  const claimHardware = async (hardwareIdOverride?: string, showSuccess = true) => {
-    if (!provisioningDevice) return null;
+  const claimHardware = (
+    hardwareIdOverride?: string,
+    showSuccess = true
+  ): Promise<Partial<Device> | null> => {
+    if (!provisioningDevice) return Promise.resolve(null);
     const hardwareId = (hardwareIdOverride || provisioningHardwareId).trim();
-    if (!hardwareId) return null;
+    if (!hardwareId) return Promise.resolve(null);
     if (provisioningDevice.hardwareId === hardwareId) {
-      return { hardwareId } as Partial<Device>;
+      return Promise.resolve({ hardwareId } as Partial<Device>);
     }
-    if (claimingHardwareIdRef.current === hardwareId) return null;
+    if (claimingHardwareRef.current?.hardwareId === hardwareId) {
+      return claimingHardwareRef.current.promise;
+    }
 
-    claimingHardwareIdRef.current = hardwareId;
-    try {
-      const response = await devicesApi.claimHardware(provisioningDevice.deviceId, hardwareId);
-      const updated = response.data as Partial<Device>;
-      setProvisioningHardwareId(String(updated.hardwareId || hardwareId));
-      setDevices((current) =>
-        current.map((device) =>
-          device.deviceId === provisioningDevice.deviceId ? { ...device, ...updated } : device
-        )
-      );
-      setProvisioningDevice((current) => (current ? { ...current, ...updated } : current));
-      if (showSuccess) toast.success(t('devices.hardwareClaimed'));
-      return updated;
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('devices.hardwareClaimError'));
-      return null;
-    } finally {
-      claimingHardwareIdRef.current = null;
-    }
+    const promise = (async (): Promise<Partial<Device> | null> => {
+      try {
+        const response = await devicesApi.claimHardware(provisioningDevice.deviceId, hardwareId);
+        const updated = response.data as Partial<Device>;
+        setProvisioningHardwareId(String(updated.hardwareId || hardwareId));
+        setDevices((current) =>
+          current.map((device) =>
+            device.deviceId === provisioningDevice.deviceId ? { ...device, ...updated } : device
+          )
+        );
+        setProvisioningDevice((current) => (current ? { ...current, ...updated } : current));
+        if (showSuccess) toast.success(t('devices.hardwareClaimed'));
+        return updated;
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : t('devices.hardwareClaimError'));
+        return null;
+      } finally {
+        if (claimingHardwareRef.current?.hardwareId === hardwareId) {
+          claimingHardwareRef.current = null;
+        }
+      }
+    })();
+    claimingHardwareRef.current = { hardwareId, promise };
+    return promise;
   };
 
   const applyBleStatus = async (status: BleProvisioningStatus) => {
@@ -354,12 +374,26 @@ export function DeviceManagement({
 
     const nextStatus = state ? BLE_BACKEND_STATUS[state] : 'BLE_READY';
     if (!provisioningDevice) return;
+    const reportedDeviceCode = String(status.deviceCode || '').trim();
+    if (!reportedDeviceCode || reportedDeviceCode.toUpperCase() !== provisioningDevice.code.toUpperCase()) {
+      return;
+    }
     let deviceForStatus = provisioningDevice;
     const reportedHardwareId = String(status.hardwareId || '').trim();
-    if (reportedHardwareId && reportedHardwareId !== provisioningDevice.hardwareId) {
+    const activeOnRequestedCode = [
+      'wifi_connected',
+      'mqtt_connected',
+      'provisioning_complete',
+      'waiting_link_confirmation',
+      'mqtt_unreachable',
+    ].includes(reportedState);
+    if (reportedHardwareId && reportedHardwareId !== provisioningDevice.hardwareId && activeOnRequestedCode) {
       const claimed = await claimHardware(reportedHardwareId, false);
       if (!claimed) return;
       deviceForStatus = { ...provisioningDevice, ...claimed };
+    }
+    if (reportedHardwareId && reportedHardwareId !== provisioningDevice.hardwareId && !activeOnRequestedCode) {
+      return;
     }
     if (!nextStatus) return;
 
@@ -409,13 +443,7 @@ export function DeviceManagement({
 
   const sendBleConfiguration = async () => {
     if (!bleConnection) return;
-    if (
-      !provisioningDevice?.hardwareId ||
-      provisioningDevice.hardwareId !== provisioningHardwareId.trim()
-    ) {
-      toast.error(t('devices.claimHardwareFirst'));
-      return;
-    }
+    if (!provisioningDevice) return;
     if (!bleSsid.trim()) {
       toast.error(t('devices.bleInvalidConfiguration'));
       return;
@@ -1057,14 +1085,31 @@ export function DeviceManagement({
                       </div>
                       <div className="space-y-1 sm:col-span-2">
                         <Label htmlFor="ble-wifi-password">{t('devices.blePassword')}</Label>
-                        <Input
-                          id="ble-wifi-password"
-                          type="password"
-                          value={blePassword}
-                          onChange={(event) => setBlePassword(event.target.value)}
-                          maxLength={63}
-                          autoComplete="new-password"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="ble-wifi-password"
+                            type={showBlePassword ? 'text' : 'password'}
+                            value={blePassword}
+                            onChange={(event) => setBlePassword(event.target.value)}
+                            maxLength={63}
+                            autoComplete="new-password"
+                            className="pr-12"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowBlePassword((visible) => !visible)}
+                            className="absolute right-1 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded text-gray-500 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                            aria-label={t(showBlePassword ? 'common.hide' : 'common.show')}
+                            aria-pressed={showBlePassword}
+                            title={t(showBlePassword ? 'common.hide' : 'common.show')}
+                          >
+                            {showBlePassword ? (
+                              <EyeOff aria-hidden="true" className="size-4" />
+                            ) : (
+                              <Eye aria-hidden="true" className="size-4" />
+                            )}
+                          </button>
+                        </div>
                         <p className="text-xs text-blue-800">{t('devices.wifiPasswordNotShown')}</p>
                       </div>
                       <Button
