@@ -12,7 +12,12 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.anonymous.hidrosmartmobile"
+      "package": "com.hidrosmart.app",
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT"
+      ]
     },
     "web": {
       "bundler": "metro"
@@ -26,6 +31,11 @@
           "bluetoothAlwaysPermission": "HidroSmart utiliza Bluetooth para encontrar y configurar dispositivos de monitoreo de agua."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d7f0536c-7f9f-4ab1-a3f9-81cfa4d99388"
+      }
+    }
   }
 }
