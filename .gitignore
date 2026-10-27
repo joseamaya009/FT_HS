@@ -6,7 +6,7 @@ dist/
 .vite/
 out/
 .web-dist/
-src/mobile/webBundle.js
+!src/mobile/webBundle.js
 
 # Local environment files
 
