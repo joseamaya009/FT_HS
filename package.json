@@ -11,6 +11,7 @@
     "lint": "prettier --check src",
     "dev": "vite",
     "mobile:prepare": "node scripts/prepare-mobile-bundle.mjs",
+    "eas-build-post-install": "npm run mobile:prepare",
     "mobile:doctor": "npx expo-doctor",
     "mobile:prebuild": "expo prebuild --platform android",
     "mobile:start": "node scripts/start-expo-go.mjs",
