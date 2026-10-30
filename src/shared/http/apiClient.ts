@@ -574,6 +574,15 @@ export const devicesApi = {
       `/devices/${encodeURIComponent(deviceId)}/telemetry${suffix}`
     );
   },
+  setMeasurement: (deviceId: string, enabled: boolean) =>
+    apiClient.post<{
+      data: {
+        deviceId: string;
+        commandId: string;
+        requestedMeasurementEnabled: boolean;
+        acceptedAt: string;
+      };
+    }>(`/devices/${encodeURIComponent(deviceId)}/measurement`, { enabled }),
   update: (deviceId: number | string, payload: unknown) =>
     apiClient.put<{ data: unknown }>(`/devices/${deviceId}`, payload),
   updateConfig: (deviceId: number | string, payload: unknown) =>
