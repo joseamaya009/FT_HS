@@ -26,6 +26,8 @@ import {
   History,
   Loader2,
   MapPin,
+  Pause,
+  Play,
   RefreshCw,
   Settings2,
   Trash2,
@@ -60,6 +62,7 @@ type Device = {
   hardwareId?: string | null;
   status: string;
   connectivityStatus?: string;
+  measurementEnabled?: boolean;
   alertThreshold?: number | null;
   lastConnectionAt?: string | null;
   lastIp?: string | null;
@@ -130,6 +133,9 @@ export function DeviceManagement({
   const [historyLoading, setHistoryLoading] = useState(false);
   const [actuatorStates, setActuatorStates] = useState<ActuatorState[]>([]);
   const [commandingActuator, setCommandingActuator] = useState<string | null>(null);
+  const [commandingMeasurement, setCommandingMeasurement] = useState<string | null>(null);
+  const [pendingMeasurement, setPendingMeasurement] = useState<Record<string, boolean>>({});
+  const measurementTimeoutsRef = useRef(new Map<string, number>());
   const [provisioningDevice, setProvisioningDevice] = useState<Device | null>(null);
   const [provisioningHardwareId, setProvisioningHardwareId] = useState('');
   const [provisioningSaving, setProvisioningSaving] = useState(false);
@@ -262,6 +268,29 @@ export function DeviceManagement({
 
     return () => window.clearInterval(refreshTimer);
   }, [homeId, page, sort, order]);
+
+  useEffect(() => {
+    Object.entries(pendingMeasurement).forEach(([deviceId, enabled]) => {
+      const device = devices.find((item) => item.deviceId === deviceId);
+      if (!device || device.measurementEnabled !== enabled) return;
+
+      const timeout = measurementTimeoutsRef.current.get(deviceId);
+      if (timeout !== undefined) window.clearTimeout(timeout);
+      measurementTimeoutsRef.current.delete(deviceId);
+      setPendingMeasurement((current) => {
+        if (current[deviceId] !== enabled) return current;
+        const next = { ...current };
+        delete next[deviceId];
+        return next;
+      });
+      toast.success(t(enabled ? 'devices.measurementEnabledConfirmed' : 'devices.measurementPausedConfirmed'));
+    });
+  }, [devices, pendingMeasurement, t]);
+
+  useEffect(() => () => {
+    measurementTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
+    measurementTimeoutsRef.current.clear();
+  }, []);
 
   const linkExisting = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -534,6 +563,38 @@ export function DeviceManagement({
       toast.error(error instanceof Error ? error.message : t('devices.actuatorCommandError'));
     } finally {
       setCommandingActuator(null);
+    }
+  };
+
+  const toggleMeasurement = async (device: Device) => {
+    if (device.connectivityStatus !== 'ONLINE') {
+      toast.error(t('devices.measurementDeviceOffline'));
+      return;
+    }
+
+    const enabled = device.measurementEnabled === false;
+    setCommandingMeasurement(device.deviceId);
+    try {
+      await devicesApi.setMeasurement(device.deviceId, enabled);
+      setPendingMeasurement((current) => ({ ...current, [device.deviceId]: enabled }));
+      const previousTimeout = measurementTimeoutsRef.current.get(device.deviceId);
+      if (previousTimeout !== undefined) window.clearTimeout(previousTimeout);
+      const timeout = window.setTimeout(() => {
+        measurementTimeoutsRef.current.delete(device.deviceId);
+        setPendingMeasurement((current) => {
+          if (current[device.deviceId] !== enabled) return current;
+          const next = { ...current };
+          delete next[device.deviceId];
+          return next;
+        });
+        toast.error(t('devices.measurementNoConfirmation'));
+      }, 25000);
+      measurementTimeoutsRef.current.set(device.deviceId, timeout);
+      toast.info(t('devices.measurementCommandSent'));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('devices.measurementCommandError'));
+    } finally {
+      setCommandingMeasurement(null);
     }
   };
 
@@ -891,6 +952,43 @@ export function DeviceManagement({
                         </div>
                       )}
                       <div className="iot-device-actions flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                        {canManageAssignedDevice && (() => {
+                          const measurementEnabled = device.measurementEnabled !== false;
+                          const online = device.connectivityStatus === 'ONLINE';
+                          return (
+                            <div className="flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                              <div className="flex flex-col gap-1">
+                                <span className="text-xs font-medium text-slate-600">
+                                  {t('devices.measurementState')}
+                                </span>
+                                <Badge variant={measurementEnabled ? 'default' : 'secondary'}>
+                                  {t(measurementEnabled ? 'devices.measurementActive' : 'devices.measurementPaused')}
+                                </Badge>
+                              </div>
+                              <Button
+                                variant={measurementEnabled ? 'destructive' : 'default'}
+                                size="sm"
+                                disabled={!online || commandingMeasurement === device.deviceId || pendingMeasurement[device.deviceId] !== undefined}
+                                title={!online ? t('devices.measurementDeviceOffline') : undefined}
+                                onClick={() => void toggleMeasurement(device)}
+                              >
+                                {commandingMeasurement === device.deviceId || pendingMeasurement[device.deviceId] !== undefined ? (
+                                  <Loader2 className="mr-2 size-4 animate-spin" />
+                                ) : measurementEnabled ? (
+                                  <Pause className="mr-2 size-4" />
+                                ) : (
+                                  <Play className="mr-2 size-4" />
+                                )}
+                                {pendingMeasurement[device.deviceId] !== undefined
+                                  ? t('devices.measurementWaiting')
+                                  : t(measurementEnabled ? 'devices.pauseMeasurement' : 'devices.resumeMeasurement')}
+                              </Button>
+                              <p className="w-full text-xs leading-relaxed text-slate-500">
+                                {t('devices.measurementMonitoringHint')}
+                              </p>
+                            </div>
+                          );
+                        })()}
                         {canManageAssignedDevice && (
                           <Button
                             className="flex-1"
