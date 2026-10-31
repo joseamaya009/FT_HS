@@ -385,7 +385,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
   return (
     <div className="mobile-dashboard min-w-0 space-y-4 sm:space-y-5 lg:space-y-6">
       {/* RNF2.2 - Tarjetas de resumen con información clara */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div className="dashboard-summary-grid mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="pb-3">
             <CardDescription>
@@ -449,7 +449,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
       </div>
 
       {/* RF18 - Alertas y notificaciones */}
-      <Card className="hidden sm:block">
+      <Card className="dashboard-alerts-card mx-auto hidden w-full max-w-7xl sm:block">
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
