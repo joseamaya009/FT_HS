@@ -932,11 +932,11 @@ body,
 @media (min-width: 1025px) {
   /* Espacios generosos en desktop */
   [data-slot='card-header'] {
-    padding: 1.5rem !important;
+    padding: 1.25rem !important;
   }
 
   [data-slot='card-content'] {
-    padding: 1.5rem !important;
+    padding: 1.25rem !important;
   }
 
   main[role='main'] {
