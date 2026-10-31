@@ -537,147 +537,151 @@ export function AccountSettings({ roles, homeId }: AccountSettingsProps) {
         </TabsList>
 
         <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('settings.personalInfo')}</CardTitle>
-              <CardDescription>{t('settings.managePersonalInfo')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="flex size-20 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-2xl text-white">
-                  {profile.avatarDataUrl ? (
-                    <img
-                      src={profile.avatarDataUrl}
-                      alt={t('settings.profilePhotoAlt')}
-                      className="size-full object-cover"
+          <div className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('settings.personalInfo')}</CardTitle>
+                <CardDescription>{t('settings.managePersonalInfo')}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex size-20 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-2xl text-white">
+                    {profile.avatarDataUrl ? (
+                      <img
+                        src={profile.avatarDataUrl}
+                        alt={t('settings.profilePhotoAlt')}
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      profile.fullName
+                        .split(/\s+/)
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((part) => part[0])
+                        .join('')
+                        .toUpperCase() || 'HS'
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleAvatarChange}
                     />
-                  ) : (
-                    profile.fullName
-                      .split(/\s+/)
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .map((part) => part[0])
-                      .join('')
-                      .toUpperCase() || 'HS'
-                  )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={profileLoading}
+                      onClick={() => avatarInputRef.current?.click()}
+                    >
+                      <Camera className="size-4" />
+                      {t('settings.changePhoto')}
+                    </Button>
+                    <p className="text-xs text-gray-600">{t('settings.photoFormats')}</p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <input
-                    ref={avatarInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleAvatarChange}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={profileLoading}
-                    onClick={() => avatarInputRef.current?.click()}
-                  >
-                    <Camera className="size-4" />
-                    {t('settings.changePhoto')}
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">{t('settings.fullName')} *</Label>
+                    <Input
+                      id="fullName"
+                      value={profile.fullName}
+                      disabled={profileLoading}
+                      onChange={(event) => setProfile({ ...profile, fullName: event.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">{t('auth.email')} *</Label>
+                    <Input id="email" type="email" value={profile.email} disabled />
+                    <p className="text-xs text-gray-600">
+                      {t('settings.changeEmailRequiresVerification')}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="docType">{t('settings.documentType')} *</Label>
+                    <Select value={profile.documentType || undefined} disabled>
+                      <SelectTrigger id="docType">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CC">{t('settings.citizenshipId')}</SelectItem>
+                        <SelectItem value="CE">{t('settings.foreignerId')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="docNumber">{t('settings.documentNumber')} *</Label>
+                    <Input id="docNumber" value={profile.documentNumber} disabled />
+                    <p className="text-xs text-gray-600">
+                      {t('settings.documentCannotBeModified')}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">{t('settings.phone')}</Label>
+                    <Input
+                      id="phone"
+                      value={profile.phone}
+                      maxLength={60}
+                      disabled={profileLoading}
+                      onChange={(event) => setProfile({ ...profile, phone: event.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">{t('settings.city')}</Label>
+                    <Input
+                      id="city"
+                      value={profile.city}
+                      disabled={profileLoading}
+                      onChange={(event) => setProfile({ ...profile, city: event.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <Alert>
+                  <Shield className="size-4" />
+                  <AlertDescription>
+                    {t('settings.sensitiveChangesRequireEmailVerification')}
+                  </AlertDescription>
+                </Alert>
+                <div className="flex gap-3">
+                  <Button onClick={handleSaveProfile} disabled={profileLoading}>
+                    {t('settings.saveChanges')}
                   </Button>
-                  <p className="text-xs text-gray-600">{t('settings.photoFormats')}</p>
+                  <Button variant="outline" onClick={() => setProfile(savedProfile)}>
+                    {t('common.cancel')}
+                  </Button>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">{t('settings.fullName')} *</Label>
-                  <Input
-                    id="fullName"
-                    value={profile.fullName}
-                    disabled={profileLoading}
-                    onChange={(event) => setProfile({ ...profile, fullName: event.target.value })}
-                  />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('settings.accountInfo')}</CardTitle>
+                <CardDescription>{t('settings.accountInfoDesc')}</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <div className="text-sm text-gray-600">{t('settings.registrationDate')}</div>
+                  <div className="text-sm">{formatDate(summary.createdAt)}</div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">{t('auth.email')} *</Label>
-                  <Input id="email" type="email" value={profile.email} disabled />
-                  <p className="text-xs text-gray-600">
-                    {t('settings.changeEmailRequiresVerification')}
-                  </p>
+                <div>
+                  <div className="text-sm text-gray-600">{t('settings.accountType')}</div>
+                  <Badge>{roleLabel}</Badge>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="docType">{t('settings.documentType')} *</Label>
-                  <Select value={profile.documentType || undefined} disabled>
-                    <SelectTrigger id="docType">
-                      <SelectValue placeholder="—" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CC">{t('settings.citizenshipId')}</SelectItem>
-                      <SelectItem value="CE">{t('settings.foreignerId')}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div>
+                  <div className="text-sm text-gray-600">{t('settings.registeredHomes')}</div>
+                  <div className="text-sm">{summary.homes ?? '—'}</div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="docNumber">{t('settings.documentNumber')} *</Label>
-                  <Input id="docNumber" value={profile.documentNumber} disabled />
-                  <p className="text-xs text-gray-600">{t('settings.documentCannotBeModified')}</p>
+                <div>
+                  <div className="text-sm text-gray-600">{t('settings.activeDevices')}</div>
+                  <div className="text-sm">{summary.devices ?? '—'}</div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">{t('settings.phone')}</Label>
-                  <Input
-                    id="phone"
-                    value={profile.phone}
-                    maxLength={60}
-                    disabled={profileLoading}
-                    onChange={(event) => setProfile({ ...profile, phone: event.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">{t('settings.city')}</Label>
-                  <Input
-                    id="city"
-                    value={profile.city}
-                    disabled={profileLoading}
-                    onChange={(event) => setProfile({ ...profile, city: event.target.value })}
-                  />
-                </div>
-              </div>
-
-              <Alert>
-                <Shield className="size-4" />
-                <AlertDescription>
-                  {t('settings.sensitiveChangesRequireEmailVerification')}
-                </AlertDescription>
-              </Alert>
-              <div className="flex gap-3">
-                <Button onClick={handleSaveProfile} disabled={profileLoading}>
-                  {t('settings.saveChanges')}
-                </Button>
-                <Button variant="outline" onClick={() => setProfile(savedProfile)}>
-                  {t('common.cancel')}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('settings.accountInfo')}</CardTitle>
-              <CardDescription>{t('settings.accountInfoDesc')}</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <div className="text-sm text-gray-600">{t('settings.registrationDate')}</div>
-                <div className="text-sm">{formatDate(summary.createdAt)}</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">{t('settings.accountType')}</div>
-                <Badge>{roleLabel}</Badge>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">{t('settings.registeredHomes')}</div>
-                <div className="text-sm">{summary.homes ?? '—'}</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">{t('settings.activeDevices')}</div>
-                <div className="text-sm">{summary.devices ?? '—'}</div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="security">
