@@ -969,6 +969,47 @@ body,
     padding: 0.75rem 1rem 0.875rem !important;
   }
 
+  .mobile-dashboard > .dashboard-summary-grid,
+  .mobile-dashboard > .dashboard-alerts-card {
+    max-width: 80rem;
+  }
+
+  .mobile-dashboard > .dashboard-summary-grid > [data-slot='card'],
+  .mobile-dashboard > .dashboard-alerts-card {
+    gap: 0.5rem;
+  }
+
+  .mobile-dashboard > .dashboard-summary-grid [data-slot='card-header'],
+  .mobile-dashboard > .dashboard-alerts-card [data-slot='card-header'] {
+    padding: 1rem 1.25rem 0.5rem !important;
+  }
+
+  .mobile-dashboard > .dashboard-summary-grid [data-slot='card-content'],
+  .mobile-dashboard > .dashboard-alerts-card [data-slot='card-content'] {
+    padding: 0 1.25rem 1rem !important;
+  }
+
+  .mobile-homes-page {
+    gap: 1rem !important;
+  }
+
+  .mobile-homes-page [data-slot='card'] {
+    gap: 0.5rem;
+  }
+
+  .mobile-homes-page [data-slot='card'] [data-slot='card-header'] {
+    padding: 1rem 1.25rem 0.5rem !important;
+  }
+
+  .mobile-homes-page [data-slot='card'] [data-slot='card-content'] {
+    padding: 0 1.25rem 1rem !important;
+  }
+
+  .mobile-homes-page .homes-carousel {
+    gap: 1rem;
+    padding-bottom: 0.25rem;
+  }
+
   /* El registro necesita una composición más densa: evita los rellenos
      generales de tarjetas que separaban las pestañas, título y primer campo. */
   .register-card [data-slot='card-header'] {
