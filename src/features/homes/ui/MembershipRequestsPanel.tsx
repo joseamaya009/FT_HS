@@ -96,7 +96,7 @@ export function MembershipRequestsPanel() {
           hogares.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 pt-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1 space-y-2">
             <Label htmlFor="membership-home">Hogar</Label>

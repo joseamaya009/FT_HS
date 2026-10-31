@@ -272,7 +272,7 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
   };
 
   return (
-    <div className="mobile-homes-page space-y-4 sm:space-y-6">
+    <div className="mobile-homes-page space-y-3 sm:space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h2 className="text-2xl font-semibold">{t('homes.title')}</h2>
@@ -581,7 +581,7 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
                       selectHome(home);
                     }
                   }}
-                  className="cursor-pointer rounded-t-xl p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-inset sm:p-6"
+                  className="cursor-pointer rounded-t-xl p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-inset sm:p-5"
                 >
                   <CardTitle className="flex min-w-0 items-center gap-2 break-words text-lg leading-6">
                     <Building2 className="size-5 shrink-0 text-blue-600" />
@@ -613,7 +613,7 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
                     </span>
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="homes-card-actions flex items-center justify-between gap-2 px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
+                <CardContent className="homes-card-actions flex items-center justify-between gap-2 px-4 pb-4 pt-0 sm:px-5 sm:pb-5">
                   <Badge>{home.status || t('homes.active')}</Badge>
                   <div className="flex flex-wrap gap-2">
                     {canManage && (
@@ -642,7 +642,7 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
       )}
 
       <Card className="homes-members-card overflow-hidden">
-        <CardHeader>
+        <CardHeader className="pb-2 sm:pb-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <CardTitle className="text-lg">{t('homes.homeMembers')}</CardTitle>
@@ -688,7 +688,7 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 pt-0">
           {membersLoading ? (
             <div className="flex items-center justify-center py-8 text-sm text-gray-600">
               <Loader2 className="mr-2 size-4 animate-spin" />

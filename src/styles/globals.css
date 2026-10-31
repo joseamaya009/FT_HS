@@ -932,15 +932,41 @@ body,
 @media (min-width: 1025px) {
   /* Espacios generosos en desktop */
   [data-slot='card-header'] {
-    padding: 1.5rem !important;
+    padding: 1.25rem !important;
   }
 
   [data-slot='card-content'] {
-    padding: 1.5rem !important;
+    padding: 1.25rem !important;
   }
 
   main[role='main'] {
     padding: 1.5rem !important;
+  }
+
+  /* Reportes y recomendaciones: evita tarjetas altas con contenido pegado
+     arriba y reduce el espacio vertical entre sus bloques. */
+  .mobile-reports-page,
+  .recommendations-page {
+    gap: 1rem !important;
+  }
+
+  .mobile-reports-page [data-slot='card'],
+  .recommendations-page [data-slot='card'] {
+    gap: 0.5rem;
+  }
+
+  .mobile-reports-page [data-slot='card-header'],
+  .recommendations-page [data-slot='card-header'] {
+    padding: 1rem 1.25rem 0.5rem !important;
+  }
+
+  .mobile-reports-page [data-slot='card-content'],
+  .recommendations-page [data-slot='card-content'] {
+    padding: 0 1.25rem 1rem !important;
+  }
+
+  .recommendations-page > div.grid > [data-slot='card'] [data-slot='card-content'] {
+    padding: 0.75rem 1rem 0.875rem !important;
   }
 
   /* El registro necesita una composición más densa: evita los rellenos
