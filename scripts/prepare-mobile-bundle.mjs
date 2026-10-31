@@ -93,12 +93,14 @@ const mqttDeviceHost =
   process.env.VITE_MQTT_DEVICE_HOST?.trim() ||
   process.env.MQTT_DEVICE_HOST?.trim() ||
   readEnvValue('MQTT_DEVICE_HOST', repositoryEnv) ||
-  readEnvValue('VITE_MQTT_DEVICE_HOST');
+  readEnvValue('VITE_MQTT_DEVICE_HOST') ||
+  'mqtt.flespi.io';
 const mqttDevicePort =
   process.env.VITE_MQTT_DEVICE_PORT?.trim() ||
   process.env.MQTT_DEVICE_PORT?.trim() ||
   readEnvValue('MQTT_DEVICE_PORT', repositoryEnv) ||
-  readEnvValue('VITE_MQTT_DEVICE_PORT');
+  readEnvValue('VITE_MQTT_DEVICE_PORT') ||
+  '8883';
 if (mobileApiUrl) {
   try {
     const hostname = new URL(mobileApiUrl).hostname;
@@ -118,12 +120,6 @@ const buildEnv = {
   ...(mqttDeviceHost ? { VITE_MQTT_DEVICE_HOST: mqttDeviceHost } : {}),
   ...(mqttDevicePort ? { VITE_MQTT_DEVICE_PORT: mqttDevicePort } : {}),
 };
-
-if (!mqttDeviceHost) {
-  console.warn(
-    '[HidroSmart móvil] No se encontró VITE_MQTT_DEVICE_HOST ni MQTT_DEVICE_HOST; el aprovisionamiento BLE no podrá enviar el host del broker.'
-  );
-}
 
 if (process.platform === 'win32') {
   execFileSync(

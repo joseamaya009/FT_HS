@@ -59,6 +59,8 @@ type Device = {
   name: string;
   type?: string;
   location?: string | null;
+  manufacturer?: string | null;
+  model?: string | null;
   hardwareId?: string | null;
   status: string;
   connectivityStatus?: string;
@@ -123,6 +125,7 @@ export function DeviceManagement({
   const [linkOpen, setLinkOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editLocation, setEditLocation] = useState('');
+  const [editAlertThreshold, setEditAlertThreshold] = useState('');
   const [locationOption, setLocationOption] = useState('');
   const [otherLocation, setOtherLocation] = useState('');
   const [historyDevice, setHistoryDevice] = useState<Device | null>(null);
@@ -135,8 +138,8 @@ export function DeviceManagement({
   const [commandingActuator, setCommandingActuator] = useState<string | null>(null);
   const [commandingMeasurement, setCommandingMeasurement] = useState<string | null>(null);
   const [pendingMeasurement, setPendingMeasurement] = useState<Record<string, boolean>>({});
-  const measurementTimeoutsRef = useRef(new Map<string, number>());
   const [provisioningDevice, setProvisioningDevice] = useState<Device | null>(null);
+  const provisioningDeviceRef = useRef<Device | null>(null);
   const [provisioningHardwareId, setProvisioningHardwareId] = useState('');
   const [provisioningSaving, setProvisioningSaving] = useState(false);
   const [bleConnection, setBleConnection] = useState<BleProvisioningConnection | null>(null);
@@ -148,10 +151,13 @@ export function DeviceManagement({
   const [blePassword, setBlePassword] = useState('');
   const [showBlePassword, setShowBlePassword] = useState(false);
   const [provisioningUnlinked, setProvisioningUnlinked] = useState(false);
+  const [unlinkingDeviceId, setUnlinkingDeviceId] = useState<string | null>(null);
+  const measurementTimeoutsRef = useRef(new Map<string, number>());
   const claimingHardwareRef = useRef<{
     hardwareId: string;
     promise: Promise<Partial<Device> | null>;
   } | null>(null);
+  const bleAwaitingResponseRef = useRef(false);
   const devicesRequestInFlightRef = useRef(false);
   const devicesViewKeyRef = useRef('');
   const selectedHome = homes.find((home) => home.homeId === homeId);
@@ -270,27 +276,36 @@ export function DeviceManagement({
   }, [homeId, page, sort, order]);
 
   useEffect(() => {
-    Object.entries(pendingMeasurement).forEach(([deviceId, enabled]) => {
-      const device = devices.find((item) => item.deviceId === deviceId);
-      if (!device || device.measurementEnabled !== enabled) return;
+    const confirmed = Object.entries(pendingMeasurement).filter(([deviceId, enabled]) =>
+      devices.some(
+        (device) => device.deviceId === deviceId && device.measurementEnabled === enabled
+      )
+    );
+    if (confirmed.length === 0) return;
 
+    const confirmedIds = new Set(confirmed.map(([deviceId]) => deviceId));
+    for (const [deviceId, enabled] of confirmed) {
       const timeout = measurementTimeoutsRef.current.get(deviceId);
       if (timeout !== undefined) window.clearTimeout(timeout);
       measurementTimeoutsRef.current.delete(deviceId);
-      setPendingMeasurement((current) => {
-        if (current[deviceId] !== enabled) return current;
-        const next = { ...current };
-        delete next[deviceId];
-        return next;
-      });
-      toast.success(t(enabled ? 'devices.measurementEnabledConfirmed' : 'devices.measurementPausedConfirmed'));
+      toast.success(
+        t(enabled ? 'devices.measurementEnabledConfirmed' : 'devices.measurementPausedConfirmed')
+      );
+    }
+    setPendingMeasurement((current) => {
+      const next = { ...current };
+      confirmedIds.forEach((deviceId) => delete next[deviceId]);
+      return next;
     });
   }, [devices, pendingMeasurement, t]);
 
-  useEffect(() => () => {
-    measurementTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
-    measurementTimeoutsRef.current.clear();
-  }, []);
+  useEffect(
+    () => () => {
+      measurementTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
+      measurementTimeoutsRef.current.clear();
+    },
+    []
+  );
 
   const linkExisting = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -324,9 +339,15 @@ export function DeviceManagement({
       : savedLocation
         ? OTHER_LOCATION_OPTION
         : '';
+    provisioningDeviceRef.current = device;
     setProvisioningDevice(device);
     setEditName(device.name);
     setEditLocation(savedLocation);
+    setEditAlertThreshold(
+      device.alertThreshold === null || device.alertThreshold === undefined
+        ? ''
+        : String(device.alertThreshold)
+    );
     setLocationOption(selectedLocation);
     setOtherLocation(selectedLocation === OTHER_LOCATION_OPTION ? savedLocation : '');
     setProvisioningHardwareId(device.hardwareId || '');
@@ -341,6 +362,7 @@ export function DeviceManagement({
   const closeProvisioning = () => {
     bleConnection?.disconnect();
     setBleConnection(null);
+    provisioningDeviceRef.current = null;
     setProvisioningDevice(null);
     setProvisioningUnlinked(false);
     setBlePassword('');
@@ -351,10 +373,11 @@ export function DeviceManagement({
     hardwareIdOverride?: string,
     showSuccess = true
   ): Promise<Partial<Device> | null> => {
-    if (!provisioningDevice) return Promise.resolve(null);
+    const activeProvisioningDevice = provisioningDeviceRef.current || provisioningDevice;
+    if (!activeProvisioningDevice) return Promise.resolve(null);
     const hardwareId = (hardwareIdOverride || provisioningHardwareId).trim();
     if (!hardwareId) return Promise.resolve(null);
-    if (provisioningDevice.hardwareId === hardwareId) {
+    if (activeProvisioningDevice.hardwareId === hardwareId) {
       return Promise.resolve({ hardwareId } as Partial<Device>);
     }
     if (claimingHardwareRef.current?.hardwareId === hardwareId) {
@@ -363,12 +386,18 @@ export function DeviceManagement({
 
     const promise = (async (): Promise<Partial<Device> | null> => {
       try {
-        const response = await devicesApi.claimHardware(provisioningDevice.deviceId, hardwareId);
+        const response = await devicesApi.claimHardware(
+          activeProvisioningDevice.deviceId,
+          hardwareId
+        );
         const updated = response.data as Partial<Device>;
+        provisioningDeviceRef.current = { ...activeProvisioningDevice, ...updated };
         setProvisioningHardwareId(String(updated.hardwareId || hardwareId));
         setDevices((current) =>
           current.map((device) =>
-            device.deviceId === provisioningDevice.deviceId ? { ...device, ...updated } : device
+            device.deviceId === activeProvisioningDevice.deviceId
+              ? { ...device, ...updated }
+              : device
           )
         );
         setProvisioningDevice((current) => (current ? { ...current, ...updated } : current));
@@ -402,12 +431,38 @@ export function DeviceManagement({
     if (status.ssid) setBleSsid(status.ssid);
 
     const nextStatus = state ? BLE_BACKEND_STATUS[state] : 'BLE_READY';
-    if (!provisioningDevice) return;
+    const activeProvisioningDevice = provisioningDeviceRef.current || provisioningDevice;
+    if (!activeProvisioningDevice) return;
     const reportedDeviceCode = String(status.deviceCode || '').trim();
-    if (!reportedDeviceCode || reportedDeviceCode.toUpperCase() !== provisioningDevice.code.toUpperCase()) {
+    if (
+      !reportedDeviceCode ||
+      reportedDeviceCode.toUpperCase() !== activeProvisioningDevice.code.toUpperCase()
+    ) {
       return;
     }
-    let deviceForStatus = provisioningDevice;
+    if (
+      bleAwaitingResponseRef.current &&
+      [
+        'provisioning_complete',
+        'waiting_link_confirmation',
+        'wifi_failed',
+        'mqtt_unreachable',
+      ].includes(reportedState)
+    ) {
+      bleAwaitingResponseRef.current = false;
+      if (reportedState === 'provisioning_complete') {
+        toast.success(t('devices.bleProvisioningComplete'));
+      } else if (reportedState === 'waiting_link_confirmation') {
+        toast.success(t('devices.bleWaitingLinkConfirmation'));
+      } else {
+        toast.error(
+          reportedState === 'wifi_failed'
+            ? t('devices.bleWifiFailed')
+            : t('devices.bleMqttUnreachable')
+        );
+      }
+    }
+    let deviceForStatus = activeProvisioningDevice;
     const reportedHardwareId = String(status.hardwareId || '').trim();
     const activeOnRequestedCode = [
       'wifi_connected',
@@ -416,12 +471,20 @@ export function DeviceManagement({
       'waiting_link_confirmation',
       'mqtt_unreachable',
     ].includes(reportedState);
-    if (reportedHardwareId && reportedHardwareId !== provisioningDevice.hardwareId && activeOnRequestedCode) {
+    if (
+      reportedHardwareId &&
+      reportedHardwareId !== activeProvisioningDevice.hardwareId &&
+      activeOnRequestedCode
+    ) {
       const claimed = await claimHardware(reportedHardwareId, false);
       if (!claimed) return;
-      deviceForStatus = { ...provisioningDevice, ...claimed };
+      deviceForStatus = { ...activeProvisioningDevice, ...claimed };
     }
-    if (reportedHardwareId && reportedHardwareId !== provisioningDevice.hardwareId && !activeOnRequestedCode) {
+    if (
+      reportedHardwareId &&
+      reportedHardwareId !== activeProvisioningDevice.hardwareId &&
+      !activeOnRequestedCode
+    ) {
       return;
     }
     if (!nextStatus) return;
@@ -438,6 +501,7 @@ export function DeviceManagement({
               : null,
       });
       const updated = response.data as Partial<Device>;
+      provisioningDeviceRef.current = { ...deviceForStatus, ...updated };
       setDevices((current) =>
         current.map((device) =>
           device.deviceId === deviceForStatus.deviceId ? { ...device, ...updated } : device
@@ -464,10 +528,24 @@ export function DeviceManagement({
       if (connection.initialStatus) await applyBleStatus(connection.initialStatus);
       toast.success(t('devices.bleConnected'));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('devices.bleConnectionError'));
+      const detail = error instanceof Error ? error.message : '';
+      const adapterUnavailable =
+        /bluetooth adapter not available|no bluetooth adapter|bluetooth.*unavailable/i.test(detail);
+      toast.error(
+        adapterUnavailable
+          ? t('devices.bleAdapterUnavailable')
+          : detail || t('devices.bleConnectionError')
+      );
     } finally {
       setBleConnecting(false);
     }
+  };
+
+  const openProvisioningAndConnectBle = (device: Device) => {
+    openProvisioning(device);
+    // requestDevice must run inside the original user click for the browser
+    // to display the Bluetooth device picker.
+    void connectBle();
   };
 
   const sendBleConfiguration = async () => {
@@ -483,6 +561,7 @@ export function DeviceManagement({
     }
 
     setBleWriting(true);
+    bleAwaitingResponseRef.current = true;
     try {
       await bleConnection.write({
         ssid: bleSsid.trim(),
@@ -494,6 +573,7 @@ export function DeviceManagement({
       setBleState('wifi_connecting');
       toast.success(t('devices.bleConfigurationSent'));
     } catch (error) {
+      bleAwaitingResponseRef.current = false;
       toast.error(error instanceof Error ? error.message : t('devices.bleWriteError'));
     } finally {
       setBleWriting(false);
@@ -512,8 +592,10 @@ export function DeviceManagement({
       const deviceResponse = await devicesApi.update(provisioningDevice.deviceId, {
         name: editName.trim(),
         location: savedLocation || null,
+        alertThreshold: editAlertThreshold.trim() ? Number(editAlertThreshold) : undefined,
       });
       const updated = deviceResponse.data as Partial<Device>;
+      provisioningDeviceRef.current = { ...provisioningDevice, ...updated };
       setEditLocation(savedLocation);
       setDevices((current) =>
         current.map((device) =>
@@ -530,25 +612,43 @@ export function DeviceManagement({
   };
 
   const unlink = async (device: Device, keepProvisioningOpen = false) => {
+    if (!homeId || unlinkingDeviceId) return;
+    setUnlinkingDeviceId(device.deviceId);
     try {
-      await devicesApi.unlink(device.deviceId, homeId);
+      const response = await devicesApi.unlink(device.deviceId, homeId);
+      const affectedCodes = response.data?.unlinkedDeviceCodes?.length
+        ? response.data.unlinkedDeviceCodes
+        : [device.code];
+      const affectedCodeSet = new Set(affectedCodes);
       setProvisioningUnlinked(
-        (current) => current || provisioningDevice?.deviceId === device.deviceId
+        (current) => current || affectedCodeSet.has(provisioningDevice?.code || '')
       );
+      const activeProvisioningDevice = provisioningDeviceRef.current;
+      if (activeProvisioningDevice && affectedCodeSet.has(activeProvisioningDevice.code)) {
+        provisioningDeviceRef.current = { ...activeProvisioningDevice, homeId: '' };
+      }
       setProvisioningDevice((current) =>
-        current?.deviceId === device.deviceId ? { ...current, homeId: '' } : current
+        current && affectedCodeSet.has(current.code) ? { ...current, homeId: '' } : current
       );
       if (keepProvisioningOpen) {
         setDevices((current) =>
-          current.map((item) =>
-            item.deviceId === device.deviceId ? { ...item, homeId: '' } : item
-          )
+          current.map((item) => (affectedCodeSet.has(item.code) ? { ...item, homeId: '' } : item))
         );
       }
       if (!keepProvisioningOpen) await loadDevices(homeId, page);
-      toast.success(t('devices.deviceUnlinked'));
+      if (response.data?.bleCommandPublished) {
+        toast.success(
+          response.data.logicalGroup
+            ? t('devices.deviceGroupUnlinked')
+            : t('devices.deviceUnlinked')
+        );
+      } else {
+        toast.warning(t('devices.deviceUnlinkedBlePending'));
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('devices.unlinkError'));
+    } finally {
+      setUnlinkingDeviceId(null);
     }
   };
 
@@ -567,10 +667,7 @@ export function DeviceManagement({
   };
 
   const toggleMeasurement = async (device: Device) => {
-    if (device.connectivityStatus !== 'ONLINE') {
-      toast.error(t('devices.measurementDeviceOffline'));
-      return;
-    }
+    if (device.connectivityStatus !== 'ONLINE') return;
 
     const enabled = device.measurementEnabled === false;
     setCommandingMeasurement(device.deviceId);
@@ -581,13 +678,13 @@ export function DeviceManagement({
       if (previousTimeout !== undefined) window.clearTimeout(previousTimeout);
       const timeout = window.setTimeout(() => {
         measurementTimeoutsRef.current.delete(device.deviceId);
+        toast.error(t('devices.measurementNoConfirmation'));
         setPendingMeasurement((current) => {
           if (current[device.deviceId] !== enabled) return current;
           const next = { ...current };
           delete next[device.deviceId];
           return next;
         });
-        toast.error(t('devices.measurementNoConfirmation'));
       }, 25000);
       measurementTimeoutsRef.current.set(device.deviceId, timeout);
       toast.info(t('devices.measurementCommandSent'));
@@ -855,6 +952,83 @@ export function DeviceManagement({
                           )}
                         </Badge>
                       </div>
+                      {canManageAssignedDevice &&
+                        (() => {
+                          const measurementEnabled = device.measurementEnabled !== false;
+                          const online = device.connectivityStatus === 'ONLINE';
+                          const waitingForConfirmation =
+                            pendingMeasurement[device.deviceId] !== undefined;
+                          const measurementButtonLabel = waitingForConfirmation
+                            ? 'devices.measurementWaiting'
+                            : measurementEnabled
+                              ? 'devices.pauseMeasurement'
+                              : 'devices.resumeMeasurement';
+                          return (
+                            <div className="iot-measurement-panel flex min-w-0 flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex flex-col gap-1">
+                                  <span className="text-xs font-medium text-slate-600">
+                                    {t('devices.measurementState')}
+                                  </span>
+                                  <Badge variant={measurementEnabled ? 'default' : 'secondary'}>
+                                    {t(
+                                      measurementEnabled
+                                        ? 'devices.measurementActive'
+                                        : 'devices.measurementPaused'
+                                    )}
+                                  </Badge>
+                                </div>
+                                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                                  <Button
+                                    className="w-full sm:w-auto"
+                                    variant={measurementEnabled ? 'destructive' : 'default'}
+                                    size="sm"
+                                    disabled={
+                                      !online ||
+                                      waitingForConfirmation ||
+                                      commandingMeasurement === device.deviceId
+                                    }
+                                    title={
+                                      !online ? t('devices.measurementDeviceOffline') : undefined
+                                    }
+                                    onClick={() => void toggleMeasurement(device)}
+                                  >
+                                    {waitingForConfirmation ||
+                                    commandingMeasurement === device.deviceId ? (
+                                      <Loader2 className="mr-2 size-4 animate-spin" />
+                                    ) : measurementEnabled ? (
+                                      <Pause className="mr-2 size-4" />
+                                    ) : (
+                                      <Play className="mr-2 size-4" />
+                                    )}
+                                    {t(measurementButtonLabel)}
+                                  </Button>
+                                  {!online && (
+                                    <Button
+                                      className="w-full sm:w-auto"
+                                      variant="outline"
+                                      size="sm"
+                                      disabled={bleConnecting}
+                                      onClick={() => openProvisioningAndConnectBle(device)}
+                                    >
+                                      {bleConnecting ? (
+                                        <Loader2 className="mr-2 size-4 animate-spin" />
+                                      ) : (
+                                        <Bluetooth className="mr-2 size-4" />
+                                      )}
+                                      {t('devices.configureWifiBluetooth')}
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-xs leading-relaxed text-slate-500">
+                                {online
+                                  ? t('devices.measurementMonitoringHint')
+                                  : t('devices.measurementDeviceOffline')}
+                              </p>
+                            </div>
+                          );
+                        })()}
                     </CardHeader>
                     <CardContent className="iot-device-card-content space-y-4 border-t border-slate-100 pt-4">
                       <div className="iot-alert-threshold flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm">
@@ -952,43 +1126,6 @@ export function DeviceManagement({
                         </div>
                       )}
                       <div className="iot-device-actions flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-                        {canManageAssignedDevice && (() => {
-                          const measurementEnabled = device.measurementEnabled !== false;
-                          const online = device.connectivityStatus === 'ONLINE';
-                          return (
-                            <div className="flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                              <div className="flex flex-col gap-1">
-                                <span className="text-xs font-medium text-slate-600">
-                                  {t('devices.measurementState')}
-                                </span>
-                                <Badge variant={measurementEnabled ? 'default' : 'secondary'}>
-                                  {t(measurementEnabled ? 'devices.measurementActive' : 'devices.measurementPaused')}
-                                </Badge>
-                              </div>
-                              <Button
-                                variant={measurementEnabled ? 'destructive' : 'default'}
-                                size="sm"
-                                disabled={!online || commandingMeasurement === device.deviceId || pendingMeasurement[device.deviceId] !== undefined}
-                                title={!online ? t('devices.measurementDeviceOffline') : undefined}
-                                onClick={() => void toggleMeasurement(device)}
-                              >
-                                {commandingMeasurement === device.deviceId || pendingMeasurement[device.deviceId] !== undefined ? (
-                                  <Loader2 className="mr-2 size-4 animate-spin" />
-                                ) : measurementEnabled ? (
-                                  <Pause className="mr-2 size-4" />
-                                ) : (
-                                  <Play className="mr-2 size-4" />
-                                )}
-                                {pendingMeasurement[device.deviceId] !== undefined
-                                  ? t('devices.measurementWaiting')
-                                  : t(measurementEnabled ? 'devices.pauseMeasurement' : 'devices.resumeMeasurement')}
-                              </Button>
-                              <p className="w-full text-xs leading-relaxed text-slate-500">
-                                {t('devices.measurementMonitoringHint')}
-                              </p>
-                            </div>
-                          );
-                        })()}
                         {canManageAssignedDevice && (
                           <Button
                             className="flex-1"
@@ -1015,9 +1152,18 @@ export function DeviceManagement({
                             variant="outline"
                             size="sm"
                             onClick={() => void unlink(device)}
+                            disabled={unlinkingDeviceId !== null}
                           >
-                            <Trash2 className="size-4" />
-                            <span className="ml-2">{t('devices.unlinkDevice')}</span>
+                            {unlinkingDeviceId === device.deviceId ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-4" />
+                            )}
+                            <span className="ml-2">
+                              {unlinkingDeviceId === device.deviceId
+                                ? t('devices.unlinkingDevice')
+                                : t('devices.unlinkDevice')}
+                            </span>
                           </Button>
                         )}
                       </div>
@@ -1126,6 +1272,23 @@ export function DeviceManagement({
                       />
                     </div>
                   )}
+                  <div className="space-y-2">
+                    <Label htmlFor="device-settings-alert-threshold">
+                      {t('devices.alertThreshold')}
+                    </Label>
+                    <Input
+                      id="device-settings-alert-threshold"
+                      type="number"
+                      min="0.001"
+                      step="0.001"
+                      value={editAlertThreshold}
+                      onChange={(event) => setEditAlertThreshold(event.target.value)}
+                      aria-describedby="device-settings-alert-threshold-help"
+                    />
+                    <p id="device-settings-alert-threshold-help" className="text-xs text-gray-500">
+                      {t('devices.alertThresholdHelp')}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="space-y-2 rounded-lg border bg-slate-50 p-3">
@@ -1138,7 +1301,16 @@ export function DeviceManagement({
                       <span className="text-gray-500">{t('devices.wifiNetwork')}:</span>{' '}
                       {bleSsid || provisioningDevice.wifiSsid || '—'}
                     </p>
+                    <p className="mt-1">
+                      <span className="text-gray-500">{t('devices.logicalDeviceCode')}:</span>{' '}
+                      <span className="font-mono">{provisioningDevice.code}</span>
+                    </p>
+                    <p className="mt-1">
+                      <span className="text-gray-500">{t('devices.hardwareId')}:</span>{' '}
+                      <span className="font-mono">{provisioningDevice.hardwareId || '—'}</span>
+                    </p>
                   </div>
+                  <p className="text-xs text-gray-500">{t('devices.wifiReconfigureHelp')}</p>
                 </div>
 
                 <div className="space-y-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3">
@@ -1208,7 +1380,9 @@ export function DeviceManagement({
                             )}
                           </button>
                         </div>
-                        <p className="text-xs text-blue-800">{t('devices.wifiPasswordNotShown')}</p>
+                        <p className="text-xs text-blue-800">
+                          {t('devices.wifiPasswordNotShown')}
+                        </p>
                       </div>
                       <Button
                         type="button"
@@ -1228,7 +1402,7 @@ export function DeviceManagement({
                     type="button"
                     variant="outline"
                     onClick={() => provisioningDevice && void unlink(provisioningDevice, true)}
-                    disabled={provisioningUnlinked}
+                    disabled={provisioningUnlinked || unlinkingDeviceId !== null}
                   >
                     <Trash2 className="mr-2 size-4" />
                     {t('devices.unlinkDevice')}
@@ -1246,7 +1420,7 @@ export function DeviceManagement({
                   <History className="mr-2 size-4" />
                   {t('devices.viewHistory')}
                 </Button>
-                <Button type="submit" disabled={provisioningSaving || provisioningUnlinked}>
+                <Button type="submit" disabled={provisioningSaving}>
                   {provisioningSaving ? t('common.loading') : t('common.save')}
                 </Button>
               </DialogFooter>

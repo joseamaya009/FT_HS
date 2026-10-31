@@ -55,13 +55,13 @@ function getLanAddress() {
       }
       candidates.push({
         address: address.address,
-        preferred: /wi-?fi|wireless|ethernet/i.test(adapterName),
+        priority: /wi-?fi|wireless/i.test(adapterName) ? 2 : /ethernet/i.test(adapterName) ? 1 : 0,
         adapterName,
       });
     }
   }
 
-  candidates.sort((a, b) => Number(b.preferred) - Number(a.preferred));
+  candidates.sort((a, b) => b.priority - a.priority);
   return candidates[0];
 }
 
