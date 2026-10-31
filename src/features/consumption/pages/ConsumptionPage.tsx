@@ -112,7 +112,7 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
   };
 
   return (
-    <div className="mobile-consumption-page min-w-0 space-y-6">
+    <div className="mobile-consumption-page min-w-0 space-y-4 sm:space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">{t('consumption.title')}</h2>
@@ -151,7 +151,7 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
         </div>
       )}
 
-      <div className="mobile-consumption-metrics grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+      <div className="mobile-consumption-metrics grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
         <Card>
           <CardHeader>
             <CardDescription>{t('consumption.periodTotal')}</CardDescription>
@@ -194,13 +194,13 @@ export function ConsumptionPage({ homeId }: { homeId?: string }) {
         </Card>
       </div>
 
-      <div className="mobile-consumption-charts grid grid-cols-1 gap-4 sm:gap-6">
+      <div className="mobile-consumption-charts grid grid-cols-1 gap-4 sm:gap-5">
         <Card>
           <CardHeader>
             <CardTitle>{t('consumption.dailyTitle')}</CardTitle>
             <CardDescription>{t('consumption.dailyDescription')}</CardDescription>
           </CardHeader>
-          <CardContent className="h-[290px]">
+          <CardContent className="h-[270px]">
             {weekly.length ? (
               <WeeklyConsumptionChart points={weekly} />
             ) : (

@@ -383,7 +383,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
   };
 
   return (
-    <div className="mobile-dashboard min-w-0 space-y-5 sm:space-y-7 lg:space-y-8">
+    <div className="mobile-dashboard min-w-0 space-y-4 sm:space-y-5 lg:space-y-6">
       {/* RNF2.2 - Tarjetas de resumen con información clara */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <Card className="hover:shadow-lg transition-shadow">
@@ -461,7 +461,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="space-y-3">
             {alerts.map((alert) => (
               <div
@@ -522,7 +522,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
             <CardDescription>{t('dashboard.waterConsumptionPerHour')}</CardDescription>
           </CardHeader>
           <CardContent className="overflow-hidden">
-            <div className="h-64 min-w-0 lg:h-80">
+            <div className="h-60 min-w-0 lg:h-72">
               <DailyConsumptionChart points={hourlyPoints} />
             </div>
           </CardContent>
@@ -546,7 +546,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
             <CardDescription>{t('dashboard.waterConsumptionPerDay')}</CardDescription>
           </CardHeader>
           <CardContent className="overflow-hidden">
-            <div className="h-64 min-w-0 lg:h-80">
+            <div className="h-60 min-w-0 lg:h-72">
               <WeeklyConsumptionChart points={weeklyPoints} />
             </div>
           </CardContent>
@@ -571,7 +571,7 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
           <CardTitle>{t('dashboard.iotDeviceStatus')}</CardTitle>
           <CardDescription>{t('dashboard.realTimeMonitoring')}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {devices.length === 0 && (
               <p className="text-sm text-gray-600">{t('devices.noDevicesRegistered')}</p>
