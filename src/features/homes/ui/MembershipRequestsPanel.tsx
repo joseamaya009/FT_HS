@@ -88,7 +88,7 @@ export function MembershipRequestsPanel() {
   if (!homes.length) return null;
 
   return (
-    <Card className="membership-requests-card mx-auto w-full max-w-5xl">
+    <Card>
       <CardHeader>
         <CardTitle>Solicitudes de membresía</CardTitle>
         <CardDescription>
