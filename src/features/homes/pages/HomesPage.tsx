@@ -558,7 +558,7 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
           )}
           <div
             ref={homesCarouselRef}
-            className="homes-carousel mx-auto flex w-full max-w-5xl snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:thin] sm:gap-6"
+            className="homes-carousel flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:thin] sm:gap-6"
             aria-label={t('homes.title')}
           >
             {homes.map((home) => (
@@ -641,7 +641,7 @@ export function HomeManagement({ permissions = [] }: { permissions?: string[] })
         </div>
       )}
 
-      <Card className="homes-members-card mx-auto w-full max-w-5xl overflow-hidden">
+      <Card className="homes-members-card overflow-hidden">
         <CardHeader className="pb-2 sm:pb-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
