@@ -71,7 +71,7 @@ export function RecommendationsPage({ homeId }: { homeId?: string }) {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="recommendations-page space-y-4 sm:space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-2xl text-gray-900">
@@ -92,17 +92,17 @@ export function RecommendationsPage({ homeId }: { homeId?: string }) {
         </Card>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {countCards.map((item) => (
               <Card key={item.label}>
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   <p className="text-sm text-gray-500">{item.label}</p>
                   <p className="mt-1 text-2xl font-semibold">{item.value}</p>
                 </CardContent>
               </Card>
             ))}
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <p className="text-sm text-gray-500">{t('recommendations.averageUsefulness')}</p>
                 <p className="mt-1 text-2xl font-semibold">
                   {summary?.averageUsefulness == null
@@ -127,11 +127,11 @@ export function RecommendationsPage({ homeId }: { homeId?: string }) {
               ) : recommendations.length === 0 ? (
                 <p className="text-sm text-gray-500">{t('recommendations.empty')}</p>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {recommendations.map((recommendation) => {
                     const busy = busyId === recommendation.userRecommendationId;
                     return (
-                      <article key={recommendation.userRecommendationId} className="flex flex-col rounded-lg border bg-white p-4">
+                      <article key={recommendation.userRecommendationId} className="flex flex-col rounded-lg border bg-white p-3">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <Badge variant="outline">{recommendation.category}</Badge>
                           <Badge>{t(`recommendations.status.${recommendation.status}`, { defaultValue: recommendation.status })}</Badge>
