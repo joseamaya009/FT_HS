@@ -220,7 +220,7 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
   };
 
   return (
-    <div className="mobile-reports-page space-y-6">
+    <div className="mobile-reports-page space-y-4 sm:space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl text-gray-900">{t('reports.title')}</h2>
@@ -248,7 +248,7 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
           <CardTitle>{t('reports.title')}</CardTitle>
           <CardDescription>{selectedHome?.name || t('homes.home')}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           <p className="text-sm text-gray-600">{t('reports.dataSourceNotice')}</p>
           <div className="mobile-report-actions grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
             <Button
@@ -275,7 +275,7 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardDescription>{t('reports.currentConsumption')}</CardDescription>
@@ -349,7 +349,7 @@ export function ReportsAnalytics({ homeId }: { homeId?: string }) {
         </CardHeader>
         <CardContent>
           {segments.length ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {segments.map((segment) => {
                 const percentage = currentM3 > 0 ? (segment.consumptionM3 / currentM3) * 100 : 0;
                 return (
