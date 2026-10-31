@@ -1,13 +1,13 @@
 function getMqttDeviceHost(value: string | undefined) {
-  return (value || '')
+  return (value || 'mqtt.flespi.io')
     .trim()
     .replace(/^mqtts?:\/\//i, '')
     .replace(/\/.*$/, '');
 }
 
 function getMqttDevicePort(value: string | undefined) {
-  const port = Number(value || 1883);
-  return Number.isInteger(port) && port >= 1 && port <= 65535 ? port : 1883;
+  const port = Number(value || 8883);
+  return Number.isInteger(port) && port >= 1 && port <= 65535 ? port : 8883;
 }
 
 export const env = {
