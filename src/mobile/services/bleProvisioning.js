@@ -160,7 +160,7 @@ class BleProvisioningService {
     }
   }
 
-  async provision({ ssid, password, mqttHost, mqttPort = 1883, deviceCode }) {
+  async provision({ ssid, password, mqttHost, mqttPort = 8883, deviceCode }) {
     if (!this.device) throw new Error('No hay ESP32 conectado.');
 
     const payload = JSON.stringify({
