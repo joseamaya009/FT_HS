@@ -971,22 +971,7 @@ body,
 
   .mobile-dashboard > .dashboard-summary-grid,
   .mobile-dashboard > .dashboard-alerts-card {
-    max-width: 80rem;
-  }
-
-  .mobile-dashboard > .dashboard-summary-grid > [data-slot='card'],
-  .mobile-dashboard > .dashboard-alerts-card {
-    gap: 0.5rem;
-  }
-
-  .mobile-dashboard > .dashboard-summary-grid [data-slot='card-header'],
-  .mobile-dashboard > .dashboard-alerts-card [data-slot='card-header'] {
-    padding: 1rem 1.25rem 0.5rem !important;
-  }
-
-  .mobile-dashboard > .dashboard-summary-grid [data-slot='card-content'],
-  .mobile-dashboard > .dashboard-alerts-card [data-slot='card-content'] {
-    padding: 0 1.25rem 1rem !important;
+    max-width: 64rem;
   }
 
   .mobile-homes-page {
