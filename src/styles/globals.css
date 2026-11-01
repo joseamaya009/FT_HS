@@ -992,6 +992,10 @@ body,
 
   /* El registro necesita una composición más densa: evita los rellenos
      generales de tarjetas que separaban las pestañas, título y primer campo. */
+  .register-card {
+    gap: 0.5rem;
+  }
+
   .register-card [data-slot='card-header'] {
     padding: 0.5rem 1.5rem 0 !important;
   }
