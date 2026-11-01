@@ -33,12 +33,12 @@ function LoadingScreen() {
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-100 p-4">
       <div className="text-center">
-        <div className="mx-auto flex size-32 items-center justify-center rounded-2xl bg-blue-600 p-4">
-          <img src={logoImage} alt="HidroSmart Logo" className="size-24 object-contain" />
+        <div className="mx-auto flex size-40 items-center justify-center rounded-2xl bg-blue-600 p-5">
+          <img src={logoImage} alt="HidroSmart Logo" className="size-28 object-contain" />
         </div>
-        <h2 className="mt-4 text-3xl text-blue-900 hidrosmart-logo">{t('app.name')}</h2>
-        <div className="mt-2 flex items-center justify-center gap-2 text-gray-600">
-          <Loader2 className="size-4 animate-spin text-blue-600" aria-hidden="true" />
+        <h2 className="mt-5 text-4xl text-blue-900 hidrosmart-logo">{t('app.name')}</h2>
+        <div className="mt-3 flex items-center justify-center gap-2 text-base text-gray-600">
+          <Loader2 className="size-5 animate-spin text-blue-600" aria-hidden="true" />
           <p>{t('app.loadingSystem')}</p>
         </div>
       </div>
