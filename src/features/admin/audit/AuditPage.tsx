@@ -5,6 +5,7 @@ import { Button } from '@shared/ui/button';
 import { Shield } from 'lucide-react';
 import { auditApi } from '@shared/http/httpClient';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 type AuditEvent = {
   auditId: string;
@@ -17,6 +18,7 @@ type AuditEvent = {
 };
 
 export function AuditLog() {
+  const { t, i18n } = useTranslation();
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [search, setSearch] = useState('');
   const load = () =>
@@ -24,7 +26,7 @@ export function AuditLog() {
       .logs('pageSize=100')
       .then(({ data }) => setEvents(data as AuditEvent[]))
       .catch((error) =>
-        toast.error(error instanceof Error ? error.message : 'No se pudo cargar la auditoría')
+        toast.error(error instanceof Error ? error.message : t('audit.loadError'))
       );
   useEffect(() => {
     void load();
@@ -41,15 +43,15 @@ export function AuditLog() {
           <div className="flex items-center gap-3">
             <Shield className="size-6 text-purple-600" />
             <div>
-              <CardTitle>Registro de auditoría</CardTitle>
-              <CardDescription>Eventos registrados por el backend.</CardDescription>
+              <CardTitle>{t('audit.title')}</CardTitle>
+              <CardDescription>{t('audit.description')}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-3">
             <Input
-              placeholder="Buscar eventos"
+              placeholder={t('audit.searchPlaceholder')}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -58,17 +60,17 @@ export function AuditLog() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left">
-                  <th className="p-3">Fecha</th>
-                  <th className="p-3">Acción</th>
-                  <th className="p-3">Tabla</th>
-                  <th className="p-3">Descripción</th>
-                  <th className="p-3">IP</th>
+                  <th className="p-3">{t('audit.date')}</th>
+                  <th className="p-3">{t('audit.action')}</th>
+                  <th className="p-3">{t('audit.table')}</th>
+                  <th className="p-3">{t('audit.descriptionColumn')}</th>
+                  <th className="p-3">{t('audit.ip')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((event) => (
                   <tr key={event.auditId} className="border-b">
-                    <td className="p-3">{new Date(event.createdAt).toLocaleString('es-CO')}</td>
+                    <td className="p-3">{new Date(event.createdAt).toLocaleString(i18n.language)}</td>
                     <td className="p-3">{event.action}</td>
                     <td className="p-3">{event.tableName || '—'}</td>
                     <td className="p-3">{event.description || '—'}</td>
@@ -79,7 +81,7 @@ export function AuditLog() {
             </table>
           </div>
           {!filtered.length && (
-            <p className="text-sm text-gray-500">No hay eventos para mostrar.</p>
+            <p className="text-sm text-gray-500">{t('audit.empty')}</p>
           )}
         </CardContent>
       </Card>
