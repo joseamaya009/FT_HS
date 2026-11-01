@@ -13,7 +13,7 @@
     "secure": "100% seguro"
   },
   "auth": {
-    "registrationPendingNotice": "Conta criada. Verifique seu e-mail e confirme o link antes de entrar.",
+    "registrationPendingNotice": "Conta criada com sucesso. Verifique seu e-mail e confirme o link para ativar sua conta antes de entrar.",
     "login": "Entrar",
     "register": "Cadastrar",
     "logout": "Sair",

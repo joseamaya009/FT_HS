@@ -165,7 +165,7 @@ export function RegisterScreen({
         privacyPolicyVersion: '2026-09',
         termsVersion: '2026-09',
       });
-      toast.success('Cuenta creada exitosamente');
+      toast.success(t('auth.registrationPendingNotice'));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No fue posible crear la cuenta');
     } finally {

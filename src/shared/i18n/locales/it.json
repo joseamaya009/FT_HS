@@ -13,7 +13,7 @@
     "secure": "100% sicuro"
   },
   "auth": {
-    "registrationPendingNotice": "Account creato. Controlla l'email e conferma il link prima di accedere.",
+    "registrationPendingNotice": "Account creato correttamente. Controlla la tua email e conferma il link per attivare l'account prima di accedere.",
     "login": "Accedi",
     "register": "Registrati",
     "logout": "Esci",
