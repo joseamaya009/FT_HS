@@ -17,6 +17,7 @@ import {
 } from '@shared/ui/dialog';
 import { CollectionPagination, supportApi } from '@shared/http/httpClient';
 import { toast } from 'sonner';
+import { localeForLanguage } from '@shared/i18n/locale';
 
 type Ticket = {
   ticketId: string;
@@ -41,7 +42,7 @@ const EMPTY_PAGINATION: CollectionPagination = {
 };
 
 export function SupportTickets({ management = false }: { management?: boolean }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const statusLabel: Record<string, string> = {
     Abierto: t('support.open'),
     'En Proceso': t('support.inReview'),
@@ -291,7 +292,7 @@ export function SupportTickets({ management = false }: { management?: boolean })
                 </div>
                 <p className="mt-3 text-xs text-gray-500">
                   {ticket.category} · {ticket.priority} ·{' '}
-                  {new Date(ticket.createdAt).toLocaleString('es-CO')}
+                  {new Date(ticket.createdAt).toLocaleString(localeForLanguage(i18n.language))}
                 </p>
                 <Button
                   type="button"
@@ -382,7 +383,7 @@ export function SupportTickets({ management = false }: { management?: boolean })
                       <div key={response.responseId} className="rounded-md border p-3 text-sm">
                         <p>{response.message}</p>
                         <p className="mt-2 text-xs text-gray-500">
-                          {new Date(response.createdAt).toLocaleString('es-CO')}
+                          {new Date(response.createdAt).toLocaleString(localeForLanguage(i18n.language))}
                         </p>
                       </div>
                     ))

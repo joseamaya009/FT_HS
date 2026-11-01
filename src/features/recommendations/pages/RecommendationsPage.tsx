@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
+import { localeForLanguage } from '@shared/i18n/locale';
 import {
   recommendationsApi,
   type Recommendation,
@@ -12,7 +13,7 @@ import {
 } from '@shared/http/httpClient';
 
 export function RecommendationsPage({ homeId }: { homeId?: string }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [summary, setSummary] = useState<RecommendationSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -140,12 +141,17 @@ export function RecommendationsPage({ homeId }: { homeId?: string }) {
                         <p className="mt-2 flex-1 whitespace-pre-line text-sm text-gray-600">{recommendation.description}</p>
                         {recommendation.activationThreshold != null && (
                           <p className="mt-3 text-xs text-gray-500">
-                            {recommendation.activationThreshold.toLocaleString()} {recommendation.thresholdUnit}
+                            {recommendation.activationThreshold.toLocaleString(
+                              localeForLanguage(i18n.language)
+                            )}{' '}
+                            {recommendation.thresholdUnit}
                           </p>
                         )}
                         <p className="mt-2 flex items-center gap-1 text-xs text-gray-500">
                           <Clock3 className="size-3.5" />
-                          {new Date(recommendation.sentAt).toLocaleString()}
+                          {new Date(recommendation.sentAt).toLocaleString(
+                            localeForLanguage(i18n.language)
+                          )}
                         </p>
                         <div className="mt-4 flex flex-wrap gap-2">
                           {recommendation.status === 'Pending' && (

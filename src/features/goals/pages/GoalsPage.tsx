@@ -9,6 +9,8 @@ import { Droplets, Target, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { goalsApi, consumptionApi, type BudgetStatus } from '@shared/http/httpClient';
 import { localDate } from '@shared/lib/dates';
+import { useTranslation } from 'react-i18next';
+import { localeForLanguage } from '@shared/i18n/locale';
 
 type Goal = {
   goalId: string;
@@ -70,6 +72,7 @@ function toM3Input(liters: number) {
 }
 
 export function GoalsConfig({ homeId }: { homeId?: string }) {
+  const { t, i18n } = useTranslation();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [progressByGoal, setProgressByGoal] = useState<Record<string, number>>({});
   const [consumption, setConsumption] = useState(0);
@@ -130,7 +133,7 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
           : toM3Input(getPeriodLiters(activePeriod, loadedAllowance, budgetResponse.data))
       );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudieron cargar las metas');
+      toast.error(error instanceof Error ? error.message : t('goals.loadError'));
     }
   };
 
@@ -160,12 +163,12 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
   const save = async () => {
     const targetM3 = Number(consumptionLimit);
     if (!homeId || !consumptionLimit.trim() || !Number.isFinite(targetM3) || targetM3 < 0) {
-      toast.error('Ingresa un límite de consumo válido');
+      toast.error(t('goals.invalidConsumptionLimit'));
       return;
     }
     const requestedBudget = budgetLimit.trim() ? Number(budgetLimit) : null;
     if (requestedBudget != null && (!Number.isFinite(requestedBudget) || requestedBudget < 0)) {
-      toast.error('Ingresa un presupuesto válido');
+      toast.error(t('goals.invalidBudget'));
       return;
     }
     const date = new Date();
@@ -201,10 +204,10 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
     try {
       setSaving(true);
       await goalsApi.savePlan(payload);
-      toast.success('Meta guardada correctamente');
+      toast.success(t('goals.saved'));
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo guardar la meta');
+      toast.error(error instanceof Error ? error.message : t('goals.saveError'));
     } finally {
       setSaving(false);
     }
@@ -215,39 +218,39 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
       await goalsApi.remove(goalId);
       setGoals((current) => current.filter((goal) => goal.goalId !== goalId));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo eliminar la meta');
+      toast.error(error instanceof Error ? error.message : t('goals.deleteError'));
     }
   };
 
   return (
     <div className="goals-config space-y-6">
       <div>
-        <h2 className="text-2xl">Metas de consumo</h2>
+        <h2 className="text-2xl">{t('goals.pageTitle')}</h2>
         <p className="text-gray-600">
-          Configura límites persistidos en el backend para el hogar seleccionado.
+          {t('goals.pageDescription')}
         </p>
       </div>
       {budgetStatus && (
         <Card>
           <CardHeader>
-            <CardTitle>Referencia del hogar</CardTitle>
+            <CardTitle>{t('goals.homeReference')}</CardTitle>
             <CardDescription>
               {budgetAllowance
-                ? 'Calculada según el presupuesto, la tarifa y los días restantes del mes.'
-                : `Calculada con ${budgetStatus.peopleCount} persona(s), ${budgetStatus.daysInMonth} días del mes y ${budgetStatus.referenceSource === 'HOME_HISTORY' ? `${budgetStatus.historyDays} días de historial propio.` : 'la referencia inicial.'}`}
+                ? t('goals.referenceFromBudget')
+                : t('goals.referenceFromPeople', { people: budgetStatus.peopleCount, days: budgetStatus.daysInMonth, history: budgetStatus.referenceSource === 'HOME_HISTORY' ? t('goals.ownHistory', { days: budgetStatus.historyDays }) : t('goals.initialReference') })}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="rounded-lg border p-4">
-              <p className="text-sm text-gray-600">Referencia diaria</p>
+              <p className="text-sm text-gray-600">{t('goals.dailyReference')}</p>
               <p className="text-xl">{referenceDailyLiters.toFixed(0)} L</p>
             </div>
             <div className="rounded-lg border p-4">
-              <p className="text-sm text-gray-600">Referencia semanal</p>
+              <p className="text-sm text-gray-600">{t('goals.weeklyReference')}</p>
               <p className="text-xl">{referenceWeeklyLiters.toFixed(0)} L</p>
             </div>
             <div className="rounded-lg border p-4">
-              <p className="text-sm text-gray-600">Referencia mensual</p>
+              <p className="text-sm text-gray-600">{t('goals.monthlyReference')}</p>
               <p className="text-xl">{(referenceMonthlyLiters / 1000).toFixed(2)} m³</p>
             </div>
           </CardContent>
@@ -258,12 +261,12 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
           <CardHeader>
             <CardTitle>
               <Droplets className="mr-2 inline size-5 text-blue-600" />
-              Límite de consumo
+              {t('goals.consumptionLimit')}
             </CardTitle>
-            <CardDescription>Consumo del periodo actual: {consumption} m³</CardDescription>
+            <CardDescription>{t('goals.currentConsumption', { value: consumption })}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Label htmlFor="goal-m3">Meta en m³</Label>
+            <Label htmlFor="goal-m3">{t('goals.goalM3')}</Label>
             <Input
               id="goal-m3"
               type="number"
@@ -276,30 +279,30 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
                 variant={period === 'daily' ? 'default' : 'outline'}
                 onClick={() => selectPeriod('daily')}
               >
-                Diario
+                {t('goals.daily')}
               </Button>
               <Button
                 variant={period === 'weekly' ? 'default' : 'outline'}
                 onClick={() => selectPeriod('weekly')}
               >
-                Semanal
+                {t('goals.weekly')}
               </Button>
               <Button
                 variant={period === 'monthly' ? 'default' : 'outline'}
                 onClick={() => selectPeriod('monthly')}
               >
-                Mensual
+                {t('goals.monthly')}
               </Button>
             </div>
           </CardContent>
         </Card>
         <Card className="h-full">
           <CardHeader>
-            <CardTitle>Presupuesto</CardTitle>
-          <CardDescription>Presupuesto mensual para calcular el consumo disponible.</CardDescription>
+            <CardTitle>{t('goals.budget')}</CardTitle>
+          <CardDescription>{t('goals.budgetDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Label htmlFor="goal-budget">Límite monetario</Label>
+            <Label htmlFor="goal-budget">{t('goals.monetaryLimit')}</Label>
             <Input
               id="goal-budget"
               type="number"
@@ -308,32 +311,32 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
               onChange={(event) => updateBudget(event.target.value)}
             />
             <Button className="w-full" onClick={save} disabled={saving || !homeId}>
-              {saving ? 'Guardando…' : 'Guardar meta'}
+              {saving ? t('common.saving') : t('goals.saveGoal')}
             </Button>
             {budgetStatus && (
               <div className="space-y-1 rounded-lg border bg-gray-50 p-3 text-sm">
                 <p>
-                  Tarifa de referencia:{' '}
-                  <strong>${budgetStatus.tariffM3.toLocaleString('es-CO')} / m³</strong>
+                  {t('goals.referenceRate')}:{' '}
+                  <strong>{budgetStatus.tariffM3.toLocaleString(localeForLanguage(i18n.language))} / m³</strong>
                 </p>
                 <p>
-                  Costo estimado del mes:{' '}
-                  <strong>${budgetStatus.currentCost.toLocaleString('es-CO')}</strong>
+                  {t('goals.estimatedMonthlyCost')}:{' '}
+                  <strong>{budgetStatus.currentCost.toLocaleString(localeForLanguage(i18n.language))}</strong>
                 </p>
                 <p>
-                  Litros restantes segun presupuesto:{' '}
+                  {t('goals.remainingLiters')}:{' '}
                   <strong>
                     {budgetAllowance
                       ? `${budgetAllowance.remainingLiters.toFixed(0)} L`
                       : budgetLimit.trim()
                         ? budgetStatus.tariffM3 > 0
-                          ? 'Calculando…'
-                          : 'No hay tarifa vigente'
-                        : 'Configura un presupuesto'}
+                          ? t('goals.calculating')
+                          : t('goals.noCurrentRate')
+                        : t('goals.configureBudget')}
                   </strong>
                 </p>
                 <p className="text-xs text-gray-500">
-                  El costo no representa la factura final del prestador.
+                  {t('goals.costDisclaimer')}
                 </p>
               </div>
             )}
@@ -342,7 +345,7 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Metas registradas</CardTitle>
+          <CardTitle>{t('goals.registeredGoals')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {goals.length ? (
@@ -354,13 +357,13 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
                     <div>
                       <p className="font-medium">{goal.type}</p>
                       <p className="text-sm text-gray-600">
-                        {goal.targetM3} m³ · desde {goal.periodStart}
+                        {goal.targetM3} m³ · {t('goals.fromDate')} {goal.periodStart}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={goal.achieved ? 'default' : 'outline'}>
                         {goal.achieved
-                          ? 'Lograda'
+                          ? t('goals.achieved')
                           : progress === undefined
                             ? '—'
                             : `${progress.toFixed(1)}%`}
@@ -369,7 +372,7 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
                         variant="ghost"
                         size="icon"
                         onClick={() => remove(goal.goalId)}
-                        aria-label="Eliminar meta"
+                        aria-label={t('goals.deleteGoal')}
                       >
                         <Trash2 className="size-4" />
                       </Button>
@@ -382,7 +385,7 @@ export function GoalsConfig({ homeId }: { homeId?: string }) {
           ) : (
             <p className="text-sm text-gray-500">
               <Target className="mr-2 inline size-4" />
-              No hay metas registradas.
+              {t('goals.empty')}
             </p>
           )}
         </CardContent>

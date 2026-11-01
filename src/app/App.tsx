@@ -160,13 +160,14 @@ function AuthenticatedApplication() {
 }
 
 function NotFoundScreen() {
+  const { t } = useTranslation();
   return (
     <main className="min-h-dvh flex items-center justify-center bg-slate-50 p-4">
       <section className="rounded-xl bg-white p-8 text-center shadow">
-        <h1 className="text-2xl font-semibold">Página no encontrada</h1>
-        <p className="mt-2 text-slate-600">La ruta solicitada no existe.</p>
+        <h1 className="text-2xl font-semibold">{t('app.notFoundTitle')}</h1>
+        <p className="mt-2 text-slate-600">{t('app.notFoundDescription')}</p>
         <a className="mt-5 inline-block text-blue-700 hover:underline" href="/app">
-          Volver al panel
+          {t('app.backToDashboard')}
         </a>
       </section>
     </main>

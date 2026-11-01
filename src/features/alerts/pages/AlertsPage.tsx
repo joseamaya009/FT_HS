@@ -14,23 +14,26 @@ import {
   type BudgetStatus,
 } from '@shared/http/httpClient';
 import { useActiveHome } from '@app/providers/ActiveHomeProvider';
+import { useTranslation } from 'react-i18next';
+import { localeForLanguage } from '@shared/i18n/locale';
 
 type CustomAlertType = Exclude<AlertRule['alertType'], 'daily_limit' | 'monthly_limit'>;
 
 const customAlertOptions: Array<{
   type: CustomAlertType;
-  label: string;
+  labelKey: string;
   unit: AlertRule['unit'];
-  unitLabel: string;
+  unitLabelKey: string;
 }> = [
-  { type: 'excessive_consumption', label: 'Consumo diario elevado', unit: 'm3_day', unitLabel: 'm³/día' },
-  { type: 'leak_detected', label: 'Posible fuga', unit: 'minutes', unitLabel: 'minutos' },
-  { type: 'no_reading', label: 'Sin lecturas del sensor', unit: 'minutes', unitLabel: 'minutos' },
+  { type: 'excessive_consumption', labelKey: 'excessiveConsumption', unit: 'm3_day', unitLabelKey: 'm3Day' },
+  { type: 'leak_detected', labelKey: 'possibleLeak', unit: 'minutes', unitLabelKey: 'minutes' },
+  { type: 'no_reading', labelKey: 'noSensorReadings', unit: 'minutes', unitLabelKey: 'minutes' },
 ];
 
 const customRuleTypes = new Set<CustomAlertType>(customAlertOptions.map(({ type }) => type));
 
 export function NotificationsPanel({ homeId }: { homeId?: string }) {
+  const { t, i18n } = useTranslation();
   const { homes } = useActiveHome();
   const currentHome = homes.find((home) => home.homeId === homeId);
   const canManage = currentHome?.homeRole !== 'Member' && currentHome?.homeRole !== 'Guest';
@@ -87,7 +90,7 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
         setNewRuleType(available[0].type);
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudieron cargar las alertas');
+      toast.error(error instanceof Error ? error.message : t('alerts.loadError'));
     } finally {
       setLoading(false);
     }
@@ -102,11 +105,11 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
     const daily = dailyLimit.trim() === '' ? null : Number(dailyLimit);
     const monthly = monthlyLimit.trim() === '' ? null : Number(monthlyLimit);
     if (daily === null && monthly === null) {
-      toast.error('Ingresa al menos un límite diario o mensual.');
+      toast.error(t('alerts.enterLimit'));
       return;
     }
     if ([daily, monthly].some((value) => value !== null && (!Number.isFinite(value) || value < 0))) {
-      toast.error('Los límites deben ser números mayores o iguales a cero.');
+      toast.error(t('alerts.invalidLimits'));
       return;
     }
 
@@ -117,10 +120,10 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
         monthlyLimit: monthly ?? undefined,
         active: thresholdsActive,
       });
-      toast.success('Límites de alerta guardados.');
+      toast.success(t('alerts.thresholdsSaved'));
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudieron guardar los límites.');
+      toast.error(error instanceof Error ? error.message : t('alerts.saveThresholdsError'));
     } finally {
       setSavingThresholds(false);
     }
@@ -131,7 +134,7 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
     const option = customAlertOptions.find(({ type }) => type === newRuleType);
     const threshold = Number(newRuleThreshold);
     if (!option || !Number.isFinite(threshold) || threshold < 0 || (option.unit === 'minutes' && threshold === 0)) {
-      toast.error('Revisa el valor de la regla antes de guardarla.');
+      toast.error(t('alerts.invalidRule'));
       return;
     }
 
@@ -144,10 +147,10 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
         active: true,
       });
       setNewRuleThreshold('');
-      toast.success('Regla de alerta creada.');
+      toast.success(t('alerts.ruleCreated'));
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo crear la regla.');
+      toast.error(error instanceof Error ? error.message : t('alerts.createRuleError'));
     } finally {
       setSavingRule(false);
     }
@@ -158,7 +161,7 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
       await alertsApi.updateStatus(alertId, status);
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la alerta');
+      toast.error(error instanceof Error ? error.message : t('alerts.alertUpdateError'));
     }
   };
 
@@ -166,24 +169,24 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
     setBusyRuleId(rule.ruleId);
     try {
       await alertsApi.updateRule(rule.ruleId, changes);
-      toast.success('Regla de alerta actualizada.');
+      toast.success(t('alerts.ruleUpdated'));
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la regla.');
+      toast.error(error instanceof Error ? error.message : t('alerts.updateRuleError'));
     } finally {
       setBusyRuleId(null);
     }
   };
 
   const deleteRule = async (rule: AlertRule) => {
-    if (!window.confirm('¿Eliminar esta regla de alerta?')) return;
+    if (!window.confirm(t('alerts.confirmDeleteRule'))) return;
     setBusyRuleId(rule.ruleId);
     try {
       await alertsApi.deleteRule(rule.ruleId);
-      toast.success('Regla de alerta eliminada.');
+      toast.success(t('alerts.ruleDeleted'));
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo eliminar la regla.');
+      toast.error(error instanceof Error ? error.message : t('alerts.deleteRuleError'));
     } finally {
       setBusyRuleId(null);
     }
@@ -199,8 +202,8 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Alertas</CardTitle>
-          <CardDescription>Selecciona un hogar para consultar y configurar sus alertas.</CardDescription>
+          <CardTitle>{t('alerts.title')}</CardTitle>
+          <CardDescription>{t('alerts.selectHomeDescription')}</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -212,24 +215,24 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
         <CardHeader>
           <CardTitle>
             <Bell className="mr-2 inline size-5" />
-            Alertas
+            {t('alerts.title')}
           </CardTitle>
-          <CardDescription>Consulta los avisos y configura los límites de consumo del hogar.</CardDescription>
+          <CardDescription>{t('alerts.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="rounded-lg border p-4">
-              <p className="text-sm text-gray-600">Pendientes</p>
+              <p className="text-sm text-gray-600">{t('alerts.pending')}</p>
               <p className="text-2xl">{pendingCount ?? alerts.filter((alert) => alert.status === 'Pending').length}</p>
             </div>
             <div className="rounded-lg border p-4">
-              <p className="text-sm text-gray-600">Límite diario</p>
+              <p className="text-sm text-gray-600">{t('alerts.dailyLimit')}</p>
               <p className="text-2xl">
                 {savedThresholds?.dailyLimit == null ? '—' : `${savedThresholds.dailyLimit} m³`}
               </p>
             </div>
             <div className="rounded-lg border p-4">
-              <p className="text-sm text-gray-600">Límite mensual</p>
+              <p className="text-sm text-gray-600">{t('alerts.monthlyLimit')}</p>
               <p className="text-2xl">
                 {savedThresholds?.monthlyLimit == null ? '—' : `${savedThresholds.monthlyLimit} m³`}
               </p>
@@ -240,13 +243,13 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Umbrales de consumo</CardTitle>
-          <CardDescription>Las reglas diarias y mensuales se actualizan junto con estos valores.</CardDescription>
+          <CardTitle>{t('alerts.consumptionThresholds')}</CardTitle>
+          <CardDescription>{t('alerts.thresholdDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="daily-alert-limit">Límite diario (m³)</Label>
+              <Label htmlFor="daily-alert-limit">{t('alerts.dailyLimitLabel')}</Label>
               <Input
                 id="daily-alert-limit"
                 type="number"
@@ -255,11 +258,11 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
                 value={dailyLimit}
                 onChange={(event) => setDailyLimit(event.target.value)}
                 disabled={!canManage || loading}
-                placeholder="Sin límite"
+                placeholder={t('alerts.noLimit')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="monthly-alert-limit">Límite mensual (m³)</Label>
+              <Label htmlFor="monthly-alert-limit">{t('alerts.monthlyLimitLabel')}</Label>
               <Input
                 id="monthly-alert-limit"
                 type="number"
@@ -268,7 +271,7 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
                 value={monthlyLimit}
                 onChange={(event) => setMonthlyLimit(event.target.value)}
                 disabled={!canManage || loading}
-                placeholder="Sin límite"
+                placeholder={t('alerts.noLimit')}
               />
             </div>
           </div>
@@ -280,13 +283,13 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
               disabled={!canManage || loading}
               className="size-4 accent-blue-600"
             />
-            Activar alertas por límites de consumo
+            {t('alerts.activateThresholds')}
           </label>
-          {!canManage && <p className="text-sm text-gray-500">Solo el titular del hogar puede cambiar esta configuración.</p>}
+          {!canManage && <p className="text-sm text-gray-500">{t('alerts.ownerOnlyConfig')}</p>}
           {canManage && (
             <Button onClick={() => void saveThresholdConfiguration()} disabled={savingThresholds || loading}>
               <Save className="mr-2 size-4" />
-              {savingThresholds ? 'Guardando…' : 'Guardar límites'}
+              {savingThresholds ? t('common.saving') : t('alerts.saveLimits')}
             </Button>
           )}
         </CardContent>
@@ -294,14 +297,14 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Reglas de alerta</CardTitle>
-          <CardDescription>Crea y administra avisos de consumo elevado, posibles fugas y falta de lecturas.</CardDescription>
+          <CardTitle>{t('alerts.rules')}</CardTitle>
+          <CardDescription>{t('alerts.rulesDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {canManage && availableRuleOptions.length > 0 && (
             <div className="grid gap-3 rounded-lg border bg-slate-50 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
               <div className="space-y-2">
-                <Label htmlFor="new-alert-type">Tipo de alerta</Label>
+                <Label htmlFor="new-alert-type">{t('alerts.alertType')}</Label>
                 <select
                   id="new-alert-type"
                   className="h-9 w-full rounded-md border bg-background px-3 text-sm"
@@ -309,12 +312,12 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
                   onChange={(event) => setNewRuleType(event.target.value as CustomAlertType)}
                 >
                   {availableRuleOptions.map((option) => (
-                    <option key={option.type} value={option.type}>{option.label}</option>
+                    <option key={option.type} value={option.type}>{t(`alerts.types.${option.labelKey}`)}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="new-alert-threshold">Umbral ({selectedRuleOption?.unitLabel})</Label>
+                <Label htmlFor="new-alert-threshold">{t('alerts.threshold', { unit: selectedRuleOption ? t(`alerts.units.${selectedRuleOption.unitLabelKey}`) : '' })}</Label>
                 <Input
                   id="new-alert-threshold"
                   type="number"
@@ -322,19 +325,19 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
                   step={selectedRuleOption?.unit === 'minutes' ? '1' : '0.01'}
                   value={newRuleThreshold}
                   onChange={(event) => setNewRuleThreshold(event.target.value)}
-                  placeholder="Ingresa el umbral"
+                  placeholder={t('alerts.enterThreshold')}
                 />
               </div>
               <Button onClick={() => void createRule()} disabled={savingRule || loading}>
                 <Plus className="mr-2 size-4" />
-                {savingRule ? 'Creando…' : 'Crear regla'}
+                {savingRule ? t('common.creating') : t('alerts.createRule')}
               </Button>
             </div>
           )}
           {canManage && availableRuleOptions.length === 0 && (
-            <p className="text-sm text-gray-500">Ya existen reglas activas para todos los tipos disponibles.</p>
+            <p className="text-sm text-gray-500">{t('alerts.allRulesActive')}</p>
           )}
-          {!canManage && <p className="text-sm text-gray-500">Solo el titular del hogar puede administrar las reglas.</p>}
+          {!canManage && <p className="text-sm text-gray-500">{t('alerts.ownerOnlyRules')}</p>}
           {displayedRules.length ? (
             <div className="space-y-3">
               {displayedRules.map((rule) => {
@@ -343,11 +346,11 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
                 return (
                   <div key={rule.ruleId} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
                     <div>
-                      <p className="font-medium">{option?.label || rule.alertType}</p>
-                      <Badge variant={rule.active ? 'default' : 'outline'}>{rule.active ? 'Activa' : 'Pausada'}</Badge>
+                      <p className="font-medium">{option ? t(`alerts.types.${option.labelKey}`) : rule.alertType}</p>
+                      <Badge variant={rule.active ? 'default' : 'outline'}>{rule.active ? t('alerts.active') : t('alerts.paused')}</Badge>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`alert-rule-${rule.ruleId}`}>Umbral ({option?.unitLabel || rule.unit})</Label>
+                      <Label htmlFor={`alert-rule-${rule.ruleId}`}>{t('alerts.threshold', { unit: option ? t(`alerts.units.${option.unitLabelKey}`) : rule.unit })}</Label>
                       <Input
                         id={`alert-rule-${rule.ruleId}`}
                         type="number"
@@ -366,24 +369,24 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
                           onClick={() => {
                             const threshold = Number(ruleDrafts[rule.ruleId]);
                             if (!Number.isFinite(threshold) || threshold < 0 || (rule.unit === 'minutes' && threshold === 0)) {
-                              toast.error('Ingresa un umbral válido.');
+                              toast.error(t('alerts.invalidThreshold'));
                               return;
                             }
                             void updateRule(rule, { threshold });
                           }}
                         >
-                          Guardar
+                          {t('common.save')}
                         </Button>
                         <Button
                           variant="outline"
                           disabled={busy || loading}
                           onClick={() => void updateRule(rule, { active: !rule.active })}
                         >
-                          {rule.active ? 'Pausar' : 'Activar'}
+                          {rule.active ? t('alerts.pause') : t('alerts.activate')}
                         </Button>
                         <Button
                           variant="outline"
-                          aria-label="Eliminar regla"
+                          aria-label={t('alerts.deleteRule')}
                           disabled={busy || loading}
                           onClick={() => void deleteRule(rule)}
                         >
@@ -396,7 +399,7 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
               })}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">No hay reglas personalizadas para este hogar.</p>
+            <p className="text-sm text-gray-500">{t('alerts.noRules')}</p>
           )}
         </CardContent>
       </Card>
@@ -404,23 +407,23 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
       {budgetStatus && (
         <Card>
           <CardHeader>
-            <CardTitle>Ritmo de consumo y presupuesto</CardTitle>
-            <CardDescription>Comparación contra la referencia del hogar y el avance real del mes.</CardDescription>
+            <CardTitle>{t('alerts.paceAndBudget')}</CardTitle>
+            <CardDescription>{t('alerts.paceDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-lg border p-4">
-              <p className="text-sm text-gray-600">Consumo</p>
-              <p className="text-xl">{budgetStatus.currentLiters.toFixed(0)} L / {budgetStatus.expectedToDateLiters.toFixed(0)} L esperados</p>
-              <Badge>{budgetStatus.consumptionStatus || 'SIN DATOS'}</Badge>
+              <p className="text-sm text-gray-600">{t('alerts.consumption')}</p>
+              <p className="text-xl">{budgetStatus.currentLiters.toFixed(0)} L / {budgetStatus.expectedToDateLiters.toFixed(0)} L {t('alerts.expected')}</p>
+              <Badge>{budgetStatus.consumptionStatus || t('alerts.noData')}</Badge>
             </div>
             <div className="rounded-lg border p-4">
-              <p className="text-sm text-gray-600">Presupuesto</p>
+              <p className="text-sm text-gray-600">{t('alerts.budget')}</p>
               <p className="text-xl">
                 {budgetStatus.monthlyBudget == null
-                  ? 'Sin presupuesto configurado'
-                  : `$${budgetStatus.currentCost.toLocaleString('es-CO')} / $${budgetStatus.expectedBudgetToDate?.toLocaleString('es-CO') || '0'}`}
+                  ? t('alerts.noBudget')
+                  : `${budgetStatus.currentCost.toLocaleString(localeForLanguage(i18n.language))} / ${budgetStatus.expectedBudgetToDate?.toLocaleString(localeForLanguage(i18n.language)) || '0'}`}
               </p>
-              <Badge>{budgetStatus.budgetStatus || 'SIN DATOS'}</Badge>
+              <Badge>{budgetStatus.budgetStatus || t('alerts.noData')}</Badge>
             </div>
           </CardContent>
         </Card>
@@ -428,8 +431,8 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Historial</CardTitle>
-          <CardDescription>Alertas registradas por el backend para este hogar.</CardDescription>
+          <CardTitle>{t('alerts.history')}</CardTitle>
+          <CardDescription>{t('alerts.historyDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {alerts.length ? (
@@ -438,9 +441,9 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="mt-1 size-5 text-orange-600" />
                   <div>
-                    <p className="font-medium">{alert.message || 'Alerta sin descripción'}</p>
+                    <p className="font-medium">{alert.message || t('alerts.noDescription')}</p>
                     <p className="text-sm text-gray-500">
-                      {new Date(alert.generatedAt).toLocaleString('es-CO')} · valor: {alert.detectedValue ?? '—'}
+                      {new Date(alert.generatedAt).toLocaleString()} · {t('alerts.value')}: {alert.detectedValue ?? '—'}
                     </p>
                   </div>
                 </div>
@@ -449,10 +452,10 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
                   {alert.status === 'Pending' && canManage && (
                     <>
                       <Button size="sm" onClick={() => void mark(alert.alertId, 'Read')}>
-                        <CheckCircle2 className="mr-1 size-4" />Leer
+                        <CheckCircle2 className="mr-1 size-4" />{t('alerts.read')}
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => void mark(alert.alertId, 'Dismissed')}>
-                        Descartar
+                        {t('alerts.dismiss')}
                       </Button>
                     </>
                   )}
@@ -460,7 +463,7 @@ export function NotificationsPanel({ homeId }: { homeId?: string }) {
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">{loading ? 'Cargando alertas…' : 'No hay alertas para mostrar.'}</p>
+            <p className="text-sm text-gray-500">{loading ? t('alerts.loading') : t('alerts.empty')}</p>
           )}
         </CardContent>
       </Card>

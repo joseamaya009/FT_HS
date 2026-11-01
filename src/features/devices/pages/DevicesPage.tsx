@@ -46,6 +46,7 @@ import {
 import { toast } from 'sonner';
 import { can } from '@shared/config/authorization';
 import { env } from '@shared/config/env';
+import { localeForLanguage } from '@shared/i18n/locale';
 import {
   connectBleProvisioning,
   isBleProvisioningSupported,
@@ -556,7 +557,7 @@ export function DeviceManagement({
       return;
     }
     if (!env.mqttDeviceHost) {
-      toast.error('Falta configurar VITE_MQTT_DEVICE_HOST en el entorno del frontend.');
+      toast.error(t('devices.mqttHostMissing'));
       return;
     }
 
@@ -702,7 +703,7 @@ export function DeviceManagement({
   const totalPages = pagination.totalPages || 0;
   const isFirstPage = currentPage <= 1;
   const isLastPage = totalPages === 0 || currentPage >= totalPages;
-  const dateLocale = i18n.language || 'es-CO';
+  const dateLocale = localeForLanguage(i18n.language);
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1245,19 +1246,19 @@ export function DeviceManagement({
                         );
                       }}
                     >
-                      <option value="">Selecciona una ubicación</option>
+                      <option value="">{t('devices.selectLocation')}</option>
                       {DEVICE_LOCATION_OPTIONS.map((location) => (
                         <option key={location} value={location}>
                           {location}
                         </option>
                       ))}
-                      <option value={OTHER_LOCATION_OPTION}>Otro</option>
+                      <option value={OTHER_LOCATION_OPTION}>{t('common.other')}</option>
                     </select>
                   </div>
                   {locationOption === OTHER_LOCATION_OPTION && (
                     <div className="space-y-2">
                       <Label htmlFor="device-settings-other-location">
-                        Especifica la ubicación
+                        {t('devices.specifyLocation')}
                       </Label>
                       <Input
                         id="device-settings-other-location"
@@ -1266,7 +1267,7 @@ export function DeviceManagement({
                           setOtherLocation(event.target.value);
                           setEditLocation(event.target.value);
                         }}
-                        placeholder="Ej.: Lavandería, terraza..."
+                        placeholder={t('devices.locationPlaceholder')}
                         required
                         maxLength={120}
                       />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   CardContent,
@@ -20,6 +21,7 @@ interface PrivacyConsentProps {
 
 // RF7 - Gestión de Privacidad y Consentimiento de Datos
 export function PrivacyConsent({ onAccept }: PrivacyConsentProps) {
+  const { t } = useTranslation();
   const [acceptLegal, setAcceptLegal] = useState(false);
 
   const canProceed = acceptLegal;
@@ -39,10 +41,10 @@ export function PrivacyConsent({ onAccept }: PrivacyConsentProps) {
             <div className="bg-blue-600 p-3 rounded-lg">
               <Shield className="size-6 text-white" />
             </div>
-            <CardTitle className="text-2xl">Privacidad y Consentimiento</CardTitle>
+            <CardTitle className="text-2xl">{t('privacy.consentTitle')}</CardTitle>
           </div>
           <CardDescription>
-            Antes de crear tu cuenta, por favor revisa y acepta nuestras políticas de privacidad
+            {t('privacy.consentDescription')}
           </CardDescription>
         </CardHeader>
 
@@ -52,21 +54,21 @@ export function PrivacyConsent({ onAccept }: PrivacyConsentProps) {
             <Info className="size-4" />
             <AlertDescription>
               <div className="space-y-2">
-                <p className="font-semibold">Datos que recopilamos:</p>
+                <p className="font-semibold">{t('privacy.collectedData')}</p>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>Información personal: nombre, correo electrónico, documento de identidad</li>
-                  <li>Datos de consumo de agua de tus dispositivos IoT</li>
-                  <li>Ubicación de dispositivos instalados</li>
-                  <li>Historial de actividad en la plataforma</li>
-                  <li>Preferencias de configuración</li>
+                  <li>{t('privacy.collectedPersonal')}</li>
+                  <li>{t('privacy.collectedConsumption')}</li>
+                  <li>{t('privacy.collectedLocation')}</li>
+                  <li>{t('privacy.collectedActivity')}</li>
+                  <li>{t('privacy.collectedPreferences')}</li>
                 </ul>
-                <p className="font-semibold mt-3">Propósito de la recopilación:</p>
+                <p className="font-semibold mt-3">{t('privacy.collectionPurpose')}</p>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>Monitoreo y análisis de consumo de agua</li>
-                  <li>Generación de reportes y recomendaciones</li>
-                  <li>Detección de fugas y anomalías</li>
-                  <li>Mejora del servicio</li>
-                  <li>Soporte técnico y atención al cliente</li>
+                  <li>{t('privacy.purposeMonitoring')}</li>
+                  <li>{t('privacy.purposeReports')}</li>
+                  <li>{t('privacy.purposeLeaks')}</li>
+                  <li>{t('privacy.purposeService')}</li>
+                  <li>{t('privacy.purposeSupport')}</li>
                 </ul>
               </div>
             </AlertDescription>
@@ -74,56 +76,29 @@ export function PrivacyConsent({ onAccept }: PrivacyConsentProps) {
 
           {/* Política de privacidad completa */}
           <div className="space-y-3">
-            <Label>Política de Privacidad</Label>
+            <Label>{t('privacy.policyTitle')}</Label>
             <ScrollArea className="h-64 w-full rounded-lg border bg-gray-50 p-4">
               <div className="space-y-4 text-sm text-gray-700">
-                <h3 className="font-semibold">1. Recopilación de Datos</h3>
-                <p>
-                  HidroSmart recopila información necesaria para proporcionar servicios de monitoreo
-                  de consumo de agua mediante dispositivos IoT. Los datos incluyen información
-                  personal básica, datos de consumo en tiempo real y métricas de dispositivos.
-                </p>
+                <h3 className="font-semibold">{t('privacy.section1Title')}</h3>
+                <p>{t('privacy.section1Body')}</p>
 
-                <h3 className="font-semibold">2. Uso de la Información</h3>
-                <p>
-                  Los datos recopilados se utilizan exclusivamente para: análisis de consumo,
-                  generación de reportes, detección de fugas, envío de notificaciones relevantes, y
-                  mejora continua del servicio.
-                </p>
+                <h3 className="font-semibold">{t('privacy.section2Title')}</h3>
+                <p>{t('privacy.section2Body')}</p>
 
-                <h3 className="font-semibold">3. Protección de Datos</h3>
-                <p>
-                  Implementamos medidas de seguridad técnicas y organizativas para proteger tus
-                  datos contra acceso no autorizado, pérdida o alteración. El acceso se controla
-                  mediante sesiones autenticadas y permisos según el rol.
-                </p>
+                <h3 className="font-semibold">{t('privacy.section3Title')}</h3>
+                <p>{t('privacy.section3Body')}</p>
 
-                <h3 className="font-semibold">4. Compartir Información</h3>
-                <p>
-                  No vendemos ni compartimos tu información personal con terceros para fines
-                  comerciales. Solo compartimos datos con proveedores de servicios esenciales bajo
-                  estrictos acuerdos de confidencialidad.
-                </p>
+                <h3 className="font-semibold">{t('privacy.section4Title')}</h3>
+                <p>{t('privacy.section4Body')}</p>
 
-                <h3 className="font-semibold">5. Derechos del Usuario</h3>
-                <p>
-                  Puedes solicitar acceso, rectificación, actualización, oposición o eliminación de
-                  tus datos por los canales de soporte disponibles. Estas solicitudes se registran y
-                  gestionan conforme a la normativa colombiana aplicable.
-                </p>
+                <h3 className="font-semibold">{t('privacy.section5Title')}</h3>
+                <p>{t('privacy.section5Body')}</p>
 
-                <h3 className="font-semibold">6. Retención de Datos</h3>
-                <p>
-                  Conservamos tus datos mientras mantengas una cuenta activa y durante el tiempo
-                  necesario para cumplir obligaciones legales o atender solicitudes de soporte.
-                </p>
+                <h3 className="font-semibold">{t('privacy.section6Title')}</h3>
+                <p>{t('privacy.section6Body')}</p>
 
-                <h3 className="font-semibold">7. Cookies y Tecnologías de Seguimiento</h3>
-                <p>
-                  Utilizamos almacenamiento de sesión esencial para mantener tu autenticación y
-                  preferencias básicas. No declaramos cookies de análisis adicionales en esta
-                  versión local.
-                </p>
+                <h3 className="font-semibold">{t('privacy.section7Title')}</h3>
+                <p>{t('privacy.section7Body')}</p>
               </div>
             </ScrollArea>
           </div>
@@ -137,8 +112,7 @@ export function PrivacyConsent({ onAccept }: PrivacyConsentProps) {
                 onCheckedChange={(checked) => setAcceptLegal(checked as boolean)}
               />
               <Label htmlFor="legalConsent" className="text-sm leading-relaxed cursor-pointer">
-                <span className="text-red-600">*</span> Acepto los términos y condiciones y la
-                política de privacidad de HidroSmart.
+                <span className="text-red-600">*</span> {t('privacy.legalConsent')}
               </Label>
             </div>
           </div>
@@ -147,16 +121,14 @@ export function PrivacyConsent({ onAccept }: PrivacyConsentProps) {
           <Alert variant="destructive">
             <AlertTriangle className="size-4" />
             <AlertDescription className="text-sm">
-              Puedes solicitar rectificación, actualización u otros derechos de privacidad a través
-              del soporte de HidroSmart. La eliminación automática desde esta pantalla aún no está
-              habilitada.
+              {t('privacy.rightsNotice')}
             </AlertDescription>
           </Alert>
         </CardContent>
 
         <CardFooter>
           <Button onClick={handleAccept} disabled={!canProceed} className="w-full">
-            Volver al formulario
+            {t('privacy.backToForm')}
           </Button>
         </CardFooter>
       </Card>
