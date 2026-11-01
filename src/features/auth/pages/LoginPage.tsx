@@ -133,7 +133,7 @@ export function LoginScreen({
     try {
       await onLogin({ login: email.trim().toLowerCase(), password });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No fue posible iniciar sesión');
+      toast.error(error instanceof Error ? error.message : t('auth.loginError'));
     }
   };
 
@@ -152,12 +152,12 @@ export function LoginScreen({
       setIsRequestingReset(true);
       await onPasswordReset(resetEmail.trim().toLowerCase());
       setIsResetRequestSent(true);
-      toast.success('Solicitud registrada', {
-        description: 'Revisa tu correo e ingresa desde el enlace recibido.',
+      toast.success(t('auth.resetRequestSent'), {
+        description: t('auth.resetRequestSentDescription'),
       });
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'No fue posible solicitar la recuperación'
+        error instanceof Error ? error.message : t('auth.resetRequestError')
       );
     } finally {
       setIsRequestingReset(false);
@@ -171,13 +171,13 @@ export function LoginScreen({
       !isValidPassword(resetPassword) ||
       resetPassword !== resetPasswordConfirmation
     ) {
-      toast.error('Ingresa una contraseña válida y confirma la nueva contraseña');
+      toast.error(t('auth.resetPasswordInvalid'));
       return;
     }
     try {
       setIsResettingPassword(true);
       await onPasswordResetComplete({ token: resetToken, password: resetPassword });
-      toast.success('Contraseña restablecida correctamente');
+      toast.success(t('auth.resetPasswordSuccess'));
       setIsResetDialogOpen(false);
       setResetEmail('');
       setResetToken('');
@@ -187,7 +187,7 @@ export function LoginScreen({
       setResetContextStatus('idle');
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'No fue posible restablecer la contraseña'
+        error instanceof Error ? error.message : t('auth.resetPasswordError')
       );
     } finally {
       setIsResettingPassword(false);
@@ -321,7 +321,7 @@ export function LoginScreen({
                         </DialogTitle>
                         <DialogDescription className="auth-reset-description">
                           {isResetFromEmail
-                            ? 'Crea una nueva contraseña para tu cuenta.'
+                            ? t('auth.newPasswordDescription')
                             : t('auth.recoverPasswordDesc')}
                         </DialogDescription>
                       </DialogHeader>
@@ -335,7 +335,7 @@ export function LoginScreen({
                                 type="email"
                                 value={
                                   resetContextStatus === 'loading'
-                                    ? 'Validando enlace...'
+                                    ? t('auth.validatingLink')
                                     : resetEmail
                                 }
                                 readOnly
@@ -346,12 +346,12 @@ export function LoginScreen({
                               <Alert variant="destructive">
                                 <AlertCircle className="size-4" />
                                 <AlertDescription>
-                                  El enlace de recuperación no es válido o expiró.
+                                  {t('auth.invalidResetLink')}
                                 </AlertDescription>
                               </Alert>
                             )}
                             <div className="space-y-2">
-                              <Label htmlFor="resetPassword">Nueva contraseña</Label>
+                              <Label htmlFor="resetPassword">{t('auth.newPassword')}</Label>
                               <Input
                                 id="resetPassword"
                                 type="password"
@@ -361,8 +361,8 @@ export function LoginScreen({
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="resetPasswordConfirmation">
-                                Confirmar contraseña
+                                <Label htmlFor="resetPasswordConfirmation">
+                                {t('auth.confirmPassword')}
                               </Label>
                               <Input
                                 id="resetPasswordConfirmation"
@@ -390,8 +390,7 @@ export function LoginScreen({
                               <Alert>
                                 <Info className="size-4" />
                                 <AlertDescription className="text-xs">
-                                  Si la cuenta existe, recibirás un enlace de recuperación. Ábrelo
-                                  para crear tu nueva contraseña.
+                                  {t('auth.resetRequestInfo')}
                                 </AlertDescription>
                               </Alert>
                             )}
@@ -418,7 +417,7 @@ export function LoginScreen({
                             onClick={handlePasswordResetComplete}
                             disabled={isResettingPassword || resetContextStatus !== 'valid'}
                           >
-                            {isResettingPassword ? 'Restableciendo...' : 'Restablecer contraseña'}
+                            {isResettingPassword ? t('auth.resettingPassword') : t('auth.resetPassword')}
                           </Button>
                         ) : (
                           <Button
@@ -426,7 +425,7 @@ export function LoginScreen({
                             onClick={handlePasswordReset}
                             disabled={isRequestingReset}
                           >
-                            {isRequestingReset ? 'Enviando...' : t('auth.sendLink')}
+                            {isRequestingReset ? t('common.sending') : t('auth.sendLink')}
                           </Button>
                         )}
                       </DialogFooter>
