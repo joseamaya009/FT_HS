@@ -7,8 +7,10 @@ import { Label } from '@shared/ui/label';
 import { devicesApi, homesApi } from '@shared/http/httpClient';
 import { Battery, Droplets, Settings, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export function TechnicianPanel() {
+  const { t } = useTranslation();
   const [devices, setDevices] = useState<any[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const [factor, setFactor] = useState('');
@@ -25,25 +27,25 @@ export function TechnicianPanel() {
       })
       .catch((error) =>
         toast.error(
-          error instanceof Error ? error.message : 'No se pudieron cargar los dispositivos'
+          error instanceof Error ? error.message : t('technician.devicesLoadError')
         )
       );
   }, []);
 
   const saveCalibration = async () => {
     if (!selectedDeviceId || !factor || !offset) {
-      toast.error('Selecciona un dispositivo y completa la calibración');
+      toast.error(t('technician.calibrationRequired'));
       return;
     }
     try {
       await devicesApi.updateConfig(selectedDeviceId, {
         calibrationFactor: Number(factor),
         calibrationOffset: Number(offset),
-        reason: 'Calibración desde panel técnico',
+        reason: t('technician.calibrationReason'),
       });
-      toast.success('Calibración guardada');
+      toast.success(t('technician.calibrationSaved'));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo guardar la calibración');
+      toast.error(error instanceof Error ? error.message : t('technician.calibrationError'));
     }
   };
 
@@ -53,13 +55,13 @@ export function TechnicianPanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl">Panel técnico</h2>
-        <p className="text-gray-600">Estado y configuración de dispositivos registrados.</p>
+        <h2 className="text-2xl">{t('technician.title')}</h2>
+        <p className="text-gray-600">{t('technician.description')}</p>
       </div>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardDescription>Total</CardDescription>
+            <CardDescription>{t('technician.total')}</CardDescription>
             <CardTitle>
               <Droplets className="mr-2 inline size-5" />
               {devices.length}
@@ -68,7 +70,7 @@ export function TechnicianPanel() {
         </Card>
         <Card>
           <CardHeader>
-            <CardDescription>En línea</CardDescription>
+            <CardDescription>{t('technician.online')}</CardDescription>
             <CardTitle>
               <Wifi className="mr-2 inline size-5 text-green-600" />
               {online}
@@ -77,7 +79,7 @@ export function TechnicianPanel() {
         </Card>
         <Card>
           <CardHeader>
-            <CardDescription>Fuera de línea</CardDescription>
+            <CardDescription>{t('technician.offline')}</CardDescription>
             <CardTitle>
               <WifiOff className="mr-2 inline size-5 text-red-600" />
               {Math.max(devices.length - online, 0)}
@@ -87,8 +89,8 @@ export function TechnicianPanel() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Dispositivos</CardTitle>
-          <CardDescription>Información consultada desde el backend.</CardDescription>
+          <CardTitle>{t('technician.devices')}</CardTitle>
+          <CardDescription>{t('technician.backendDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {devices.length ? (
@@ -115,7 +117,7 @@ export function TechnicianPanel() {
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">No hay dispositivos registrados.</p>
+            <p className="text-sm text-gray-500">{t('technician.noDevices')}</p>
           )}
         </CardContent>
       </Card>
@@ -123,20 +125,20 @@ export function TechnicianPanel() {
         <CardHeader>
           <CardTitle>
             <Settings className="mr-2 inline size-5" />
-            Calibración
+            {t('technician.calibration')}
           </CardTitle>
-          <CardDescription>Actualiza el factor y offset de un dispositivo.</CardDescription>
+          <CardDescription>{t('technician.calibrationDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-4">
           <div className="sm:col-span-2">
-            <Label htmlFor="technician-device">Dispositivo</Label>
+            <Label htmlFor="technician-device">{t('technician.device')}</Label>
             <select
               id="technician-device"
               className="mt-2 h-10 w-full rounded-md border px-3"
               value={selectedDeviceId}
               onChange={(event) => setSelectedDeviceId(event.target.value)}
             >
-              <option value="">Seleccionar</option>
+              <option value="">{t('common.select')}</option>
               {devices.map((device) => (
                 <option key={device.deviceId} value={device.deviceId}>
                   {device.name}
@@ -145,7 +147,7 @@ export function TechnicianPanel() {
             </select>
           </div>
           <div>
-            <Label htmlFor="calibration-factor">Factor</Label>
+            <Label htmlFor="calibration-factor">{t('technician.factor')}</Label>
             <Input
               id="calibration-factor"
               type="number"
@@ -154,7 +156,7 @@ export function TechnicianPanel() {
             />
           </div>
           <div>
-            <Label htmlFor="calibration-offset">Offset</Label>
+            <Label htmlFor="calibration-offset">{t('technician.offset')}</Label>
             <Input
               id="calibration-offset"
               type="number"
@@ -164,7 +166,7 @@ export function TechnicianPanel() {
           </div>
           <Button className="sm:col-span-4" onClick={saveCalibration}>
             <Battery className="mr-2 size-4" />
-            Guardar calibración
+            {t('technician.saveCalibration')}
           </Button>
         </CardContent>
       </Card>
