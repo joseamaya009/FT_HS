@@ -24,7 +24,6 @@ type RegistrationDraft = {
 type RegistrationLocationState = {
   draft?: RegistrationDraft;
   legalAccepted?: boolean;
-  registrationPending?: boolean;
   registeredEmail?: string;
 };
 
@@ -85,7 +84,6 @@ function LoginRoute() {
   return (
     <LoginScreen
       initialEmail={state.registeredEmail || ''}
-      registrationPending={Boolean(state.registrationPending)}
       onLogin={async (credentials) => {
         await login(credentials);
         navigate('/app', { replace: true });
@@ -109,7 +107,7 @@ function RegisterRoute() {
         const result = await register(payload);
         navigate('/login', {
           replace: true,
-          state: { registrationPending: true, registeredEmail: result.email },
+          state: { registeredEmail: result.email },
         });
       }}
       initialFormData={state.draft || null}
