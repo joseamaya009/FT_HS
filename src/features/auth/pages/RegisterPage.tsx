@@ -217,7 +217,7 @@ export function RegisterScreen({
           </div>
         </div>
 
-        <Card className="w-full max-w-2xl justify-self-center overflow-hidden rounded-2xl border border-white/70 shadow-xl">
+        <Card className="register-card w-full max-w-2xl justify-self-center overflow-hidden rounded-2xl border border-white/70 shadow-xl">
           <nav
             className="auth-mode-switch mx-4 mt-4"
             aria-label={`${t('auth.login')} / ${t('auth.register')}`}
