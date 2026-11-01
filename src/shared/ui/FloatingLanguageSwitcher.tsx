@@ -31,7 +31,7 @@ export function FloatingLanguageSwitcher() {
         try {
           await userApi.updatePreferences({ language: code, currency: language.defaultCurrency });
         } catch {
-          toast.error('No fue posible guardar la preferencia de idioma');
+          toast.error(t('settings.languageSaveError'));
           return;
         }
       }

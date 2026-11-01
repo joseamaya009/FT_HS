@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { alertsApi, consumptionApi, devicesApi } from '@shared/http/httpClient';
 import type { AlertEvent, DeviceTelemetry } from '@shared/http/httpClient';
+import { localeForLanguage } from '@shared/i18n/locale';
 
 interface DashboardHomeProps {
   homeId?: string;
@@ -51,7 +52,7 @@ async function optionalDashboardRequest<T>(request: Promise<T>, label: string): 
 // RNF4.3 - Notificaciones en tiempo real
 // RF14 - Monitoreo en tiempo real
 export function DashboardHome({ homeId }: DashboardHomeProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [currentConsumption, setCurrentConsumption] = useState({
     today: 0,
@@ -327,7 +328,9 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
               id: alert.alertId,
               type: 'warning',
               message: alert.message || t('dashboard.activeAlerts'),
-              time: alert.generatedAt ? new Date(alert.generatedAt).toLocaleString() : '',
+              time: alert.generatedAt
+                ? new Date(alert.generatedAt).toLocaleString(localeForLanguage(i18n.language))
+                : '',
             }))
           );
         }
@@ -610,18 +613,20 @@ export function DashboardHome({ homeId }: DashboardHomeProps) {
                 </div>
 
                 <div className="dashboard-device-detail flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Última conexión</span>
+                  <span className="text-gray-600">{t('dashboard.lastConnection')}</span>
                   <span>
                     {device.lastConnectionAt
-                      ? new Date(device.lastConnectionAt).toLocaleString()
-                      : 'Sin registro'}
+                      ? new Date(device.lastConnectionAt).toLocaleString(
+                          localeForLanguage(i18n.language)
+                        )
+                      : t('dashboard.noConnection')}
                   </span>
                 </div>
                 <div className="dashboard-device-flow flex items-center justify-between text-sm">
                   <span className="text-gray-600">{t('dashboard.currentFlow')}</span>
                   <span>
                     {device.currentFlowLpm === null || device.currentFlowLpm === undefined
-                      ? 'Sin lectura'
+                      ? t('dashboard.noReading')
                       : `${device.currentFlowLpm.toFixed(2)} L/min`}
                   </span>
                 </div>

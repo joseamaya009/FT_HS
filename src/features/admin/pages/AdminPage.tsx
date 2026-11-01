@@ -16,6 +16,7 @@ import { Input } from '@shared/ui/input';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { userApi } from '@shared/http/apiClient';
+import { localeForLanguage } from '@shared/i18n/locale';
 import type {
   ManagedDeviceOverview,
   ManagedUser,
@@ -28,24 +29,28 @@ function isOnline(device: ManagedDeviceOverview) {
   return connectivity === 'ONLINE' || status === 'online' || status === 'active';
 }
 
-function formatDate(value?: string | null) {
-  if (!value) return 'Sin conexión registrada';
+function formatDate(
+  value: string | null | undefined,
+  t: (key: string) => string,
+  language?: string
+) {
+  if (!value) return t('admin.noConnection');
   const date = new Date(value);
   return Number.isNaN(date.getTime())
-    ? 'Sin conexión registrada'
-    : `Última conexión: ${date.toLocaleString('es-CO')}`;
+    ? t('admin.noConnection')
+    : `${t('admin.lastConnection')}: ${date.toLocaleString(localeForLanguage(language))}`;
 }
 
-function statusLabel(status: string) {
+function statusLabel(status: string, t: (key: string) => string) {
   const normalized = status.toLowerCase();
-  if (normalized === 'active') return 'Activo';
-  if (normalized === 'suspended') return 'Suspendido';
-  if (normalized === 'blocked') return 'Bloqueado';
-  return status || 'Sin estado';
+  if (normalized === 'active') return t('admin.statusActive');
+  if (normalized === 'suspended') return t('admin.statusSuspended');
+  if (normalized === 'blocked') return t('admin.statusBlocked');
+  return status || t('admin.noStatus');
 }
 
 export function AdminPanel() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [search, setSearch] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -76,7 +81,7 @@ export function AdminPanel() {
       })
       .catch((error) => {
         if (!active) return;
-        toast.error(error instanceof Error ? error.message : 'No se pudieron cargar los usuarios');
+        toast.error(error instanceof Error ? error.message : t('admin.usersLoadError'));
         setUsers([]);
         setSelectedUserId(null);
       })
@@ -105,7 +110,7 @@ export function AdminPanel() {
       .catch((error) => {
         if (!active) return;
         toast.error(
-          error instanceof Error ? error.message : 'No se pudo cargar el detalle del usuario'
+          error instanceof Error ? error.message : t('admin.userDetailLoadError')
         );
         setOverview(null);
       })
@@ -126,9 +131,9 @@ export function AdminPanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl">Panel administrativo</h2>
+        <h2 className="text-2xl">{t('admin.title')}</h2>
         <p className="text-gray-600">
-          Selecciona un usuario para consultar los hogares y dispositivos que tiene asociados.
+          {t('admin.description')}
         </p>
       </div>
 
@@ -137,24 +142,24 @@ export function AdminPanel() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="size-5 text-blue-600" />
-              Usuarios
+              {t('admin.users')}
             </CardTitle>
-            <CardDescription>{users.length} usuarios encontrados</CardDescription>
+            <CardDescription>{t('admin.usersFound', { count: users.length })}</CardDescription>
             <div className="relative pt-2">
               <Search className="absolute left-3 top-5 size-4 text-gray-400" />
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar por nombre, usuario o correo"
+                placeholder={t('admin.searchUsersPlaceholder')}
                 className="pl-9"
-                aria-label="Buscar usuarios"
+                aria-label={t('admin.searchUsers')}
               />
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
             {usersLoading ? (
               <div className="flex items-center justify-center gap-2 py-8 text-sm text-gray-500">
-                <Loader2 className="size-4 animate-spin" /> Cargando usuarios...
+                <Loader2 className="size-4 animate-spin" /> {t('admin.loadingUsers')}
               </div>
             ) : users.length ? (
               users.map((user) => {
@@ -176,7 +181,7 @@ export function AdminPanel() {
                       <p className="truncate text-xs text-gray-500">{user.email}</p>
                       <div className="mt-1 flex items-center gap-2">
                         <Badge variant={user.status === 'Active' ? 'secondary' : 'outline'}>
-                          {statusLabel(user.status)}
+                          {statusLabel(user.status, t)}
                         </Badge>
                         <span className="truncate text-xs text-gray-500">
                           {user.roles.join(', ')}
@@ -189,7 +194,7 @@ export function AdminPanel() {
               })
             ) : (
               <p className="py-8 text-center text-sm text-gray-500">
-                No hay usuarios para mostrar.
+                {t('admin.noUsers')}
               </p>
             )}
           </CardContent>
@@ -198,7 +203,7 @@ export function AdminPanel() {
         <Card>
           {overviewLoading ? (
             <div className="flex min-h-80 items-center justify-center gap-2 text-sm text-gray-500">
-              <Loader2 className="size-4 animate-spin" /> Cargando hogares y dispositivos...
+              <Loader2 className="size-4 animate-spin" /> {t('admin.loadingOverview')}
             </div>
           ) : overview ? (
             <>
@@ -207,15 +212,15 @@ export function AdminPanel() {
                   <div>
                     <CardTitle>{overview.fullName || overview.username}</CardTitle>
                     <CardDescription>
-                      {overview.email} · usuario {statusLabel(overview.status).toLowerCase()}
+                      {overview.email} · {t('admin.userStatus', { status: statusLabel(overview.status, t).toLowerCase() })}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2 text-sm">
                     <Badge variant="outline">
-                      <Home className="mr-1 size-3" /> {overview.homes.length} hogares
+                      <Home className="mr-1 size-3" /> {t('admin.homesCount', { count: overview.homes.length })}
                     </Badge>
                     <Badge variant="outline">
-                      <Droplets className="mr-1 size-3" /> {overview.devices.length} dispositivos
+                      <Droplets className="mr-1 size-3" /> {t('admin.devicesCount', { count: overview.devices.length })}
                     </Badge>
                   </div>
                 </div>
@@ -223,7 +228,7 @@ export function AdminPanel() {
               <CardContent className="space-y-6 pt-6">
                 <section>
                   <h3 className="mb-3 flex items-center gap-2 font-medium">
-                    <Home className="size-4 text-purple-600" /> Hogares asociados
+                    <Home className="size-4 text-purple-600" /> {t('admin.associatedHomes')}
                   </h3>
                   {overview.homes.length ? (
                     <div className="grid gap-3 md:grid-cols-2">
@@ -244,7 +249,7 @@ export function AdminPanel() {
                           </p>
                           <p className="mt-2 text-xs text-gray-500">
                             {home.deviceCount}{' '}
-                            {home.deviceCount === 1 ? 'dispositivo' : 'dispositivos'} · estado{' '}
+                            {t(home.deviceCount === 1 ? 'admin.deviceSingular' : 'admin.devicePlural')} · {t('admin.statusLabel')}{' '}
                             {home.status}
                           </p>
                         </div>
@@ -252,14 +257,14 @@ export function AdminPanel() {
                     </div>
                   ) : (
                     <p className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-                      Este usuario no tiene hogares asociados.
+                      {t('admin.noAssociatedHomes')}
                     </p>
                   )}
                 </section>
 
                 <section>
                   <h3 className="mb-3 flex items-center gap-2 font-medium">
-                    <Droplets className="size-4 text-cyan-600" /> Dispositivos asociados
+                    <Droplets className="size-4 text-cyan-600" /> {t('admin.associatedDevices')}
                   </h3>
                   {overview.devices.length ? (
                     <div className="grid gap-3 md:grid-cols-2">
@@ -280,14 +285,14 @@ export function AdminPanel() {
                                 ) : (
                                   <WifiOff className="mr-1 size-3" />
                                 )}
-                                {online ? 'En línea' : 'Fuera de línea'}
+                                {online ? t('admin.online') : t('admin.offline')}
                               </Badge>
                             </div>
                             <div className="mt-3 space-y-1 text-xs text-gray-600">
-                              <p>Hogar: {device.homeName}</p>
-                              <p>Ubicación: {device.location || 'No definida'}</p>
-                              <p>Hardware: {device.hardwareId || 'Pendiente de vincular'}</p>
-                              <p>{formatDate(device.lastConnectionAt)}</p>
+                              <p>{t('admin.homeLabel')}: {device.homeName}</p>
+                              <p>{t('admin.locationLabel')}: {device.location || t('admin.undefined')}</p>
+                              <p>{t('admin.hardwareLabel')}: {device.hardwareId || t('admin.pendingLink')}</p>
+                              <p>{formatDate(device.lastConnectionAt, t, i18n.language)}</p>
                             </div>
                           </div>
                         );
@@ -295,7 +300,7 @@ export function AdminPanel() {
                     </div>
                   ) : (
                     <p className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-                      Este usuario no tiene dispositivos asociados.
+                      {t('admin.noAssociatedDevices')}
                     </p>
                   )}
                 </section>
@@ -304,8 +309,8 @@ export function AdminPanel() {
           ) : (
             <div className="flex min-h-80 items-center justify-center p-6 text-center text-sm text-gray-500">
               {selectedUser
-                ? 'No se pudo cargar la información del usuario seleccionado.'
-                : 'Selecciona un usuario para ver sus hogares y dispositivos.'}
+                ? t('admin.selectedUserLoadError')
+                : t('admin.selectUserPrompt')}
             </div>
           )}
         </Card>
