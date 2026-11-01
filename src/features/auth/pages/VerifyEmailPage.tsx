@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { authApi } from '@shared/http/apiClient';
 
 type VerificationState = 'loading' | 'success' | 'invalid' | 'error';
 
 export function VerifyEmailPage() {
+  const { t } = useTranslation();
   const [state, setState] = useState<VerificationState>('loading');
   const [email, setEmail] = useState('');
   const [resending, setResending] = useState(false);
@@ -31,9 +33,9 @@ export function VerifyEmailPage() {
     setMessage('');
     try {
       await authApi.resendVerification(email.trim().toLowerCase());
-      setMessage('Si la cuenta existe, recibirás un nuevo correo de verificación.');
+      setMessage(t('verification.resendSuccess'));
     } catch {
-      setMessage('No fue posible solicitar el correo. Intenta nuevamente.');
+      setMessage(t('verification.resendError'));
     } finally {
       setResending(false);
     }
@@ -41,12 +43,12 @@ export function VerifyEmailPage() {
 
   const title =
     state === 'success'
-      ? 'Correo verificado'
+      ? t('verification.successTitle')
       : state === 'loading'
-        ? 'Verificando correo…'
+        ? t('verification.loadingTitle')
         : state === 'invalid'
-          ? 'Enlace inválido o expirado'
-          : 'No pudimos verificar tu correo';
+          ? t('verification.invalidTitle')
+          : t('verification.errorTitle');
 
   return (
     <main className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-100 p-4">
@@ -54,16 +56,16 @@ export function VerifyEmailPage() {
         <h1 className="text-xl font-semibold text-blue-950">{title}</h1>
         <p className="mt-3 text-sm text-slate-600">
           {state === 'success'
-            ? 'Tu cuenta ya puede iniciar sesión.'
+            ? t('verification.successDescription')
             : state === 'loading'
-              ? 'Estamos comprobando el enlace recibido.'
-              : 'Solicita un nuevo correo para continuar.'}
+              ? t('verification.loadingDescription')
+              : t('verification.resendDescription')}
         </p>
 
         {state !== 'success' && state !== 'loading' && (
           <form className="mt-5 space-y-3" onSubmit={resend}>
             <label className="block text-sm font-medium" htmlFor="verification-email">
-              Correo electrónico
+              {t('auth.email')}
             </label>
             <input
               id="verification-email"
@@ -77,14 +79,14 @@ export function VerifyEmailPage() {
               className="w-full rounded-md bg-blue-700 px-3 py-2 text-white disabled:opacity-50"
               disabled={resending}
             >
-              {resending ? 'Enviando…' : 'Reenviar correo'}
+              {resending ? t('verification.sending') : t('verification.resend')}
             </button>
             {message && <p className="text-sm text-slate-600">{message}</p>}
           </form>
         )}
 
         <a className="mt-5 inline-block text-sm text-blue-700 hover:underline" href="/login">
-          Volver al inicio de sesión
+          {t('auth.backToLogin')}
         </a>
       </section>
     </main>

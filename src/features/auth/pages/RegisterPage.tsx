@@ -112,42 +112,42 @@ export function RegisterScreen({
       !formData.docNumber ||
       !formData.password
     ) {
-      toast.error('Por favor completa todos los campos obligatorios');
+      toast.error(t('auth.registrationRequiredFields'));
       return;
     }
 
     if (!documentNumberPattern.test(formData.docNumber)) {
-      toast.error('El número de documento debe contener solo dígitos y máximo 10 caracteres');
+      toast.error(t('auth.documentNumberInvalid'));
       return;
     }
 
     // RF1.1 - No se admiten menores de edad (simulado con validación de documento)
     if (formData.docType === 'TI') {
-      toast.error('No se admiten registros con Tarjeta de Identidad. Debes ser mayor de edad.');
+      toast.error(t('auth.minorNotAllowed'));
       return;
     }
 
     // Validar formato de email
     if (!emailPattern.test(formData.email)) {
-      toast.error('Por favor ingresa un correo electrónico válido');
+      toast.error(t('auth.invalidEmail'));
       return;
     }
 
     // RF1.2 - Validar contraseña
     if (!isValidPassword(formData.password)) {
-      toast.error('La contraseña no cumple con los requisitos de seguridad');
+      toast.error(t('auth.passwordRequirementsInvalid'));
       return;
     }
 
     // Validar confirmación de contraseña
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Las contraseñas no coinciden');
+      toast.error(t('auth.passwordsDoNotMatch'));
       return;
     }
 
     // RF7.1 - Validar aceptación de políticas
     if (!acceptedLegal) {
-      toast.error('Debes aceptar los términos y condiciones y la política de privacidad');
+      toast.error(t('auth.legalConsentRequired'));
       return;
     }
 
@@ -165,9 +165,9 @@ export function RegisterScreen({
         privacyPolicyVersion: '2026-09',
         termsVersion: '2026-09',
       });
-      toast.success('Cuenta creada exitosamente');
+      toast.success(t('auth.registrationPendingNotice'));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No fue posible crear la cuenta');
+      toast.error(error instanceof Error ? error.message : t('auth.registrationError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -217,7 +217,7 @@ export function RegisterScreen({
           </div>
         </div>
 
-        <Card className="w-full max-w-2xl justify-self-center overflow-hidden rounded-2xl border border-white/70 shadow-xl">
+        <Card className="register-card w-full max-w-2xl justify-self-center overflow-hidden rounded-2xl border border-white/70 shadow-xl">
           <nav
             className="auth-mode-switch mx-4 mt-4"
             aria-label={`${t('auth.login')} / ${t('auth.register')}`}
@@ -232,17 +232,17 @@ export function RegisterScreen({
           <CardHeader className="px-5 pt-5 pb-3 sm:px-6 sm:pt-6">
             <CardTitle>{t('auth.createAccountTitle')}</CardTitle>
             <CardDescription>
-              Completa todos los campos obligatorios para registrarte
+              {t('auth.completeRequiredFields')}
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4 px-5 sm:px-6">
               {/* RF1.1 - Nombre completo */}
               <div className="space-y-2">
-                <Label htmlFor="name">Nombre completo *</Label>
+                <Label htmlFor="name">{t('settings.fullName')} *</Label>
                 <Input
                   id="name"
-                  placeholder="Juan Pérez"
+                  placeholder={t('auth.fullNamePlaceholder')}
                   value={formData.name}
                   onChange={(e) => updateFormData('name', e.target.value)}
                   required
@@ -252,24 +252,24 @@ export function RegisterScreen({
               {/* RF1.1 - Tipo y número de documento (C.C/C.E) */}
               <div className="mobile-inline-grid grid grid-cols-2 gap-2 sm:gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="docType">Tipo de documento *</Label>
+                  <Label htmlFor="docType">{t('settings.documentType')} *</Label>
                   <Select
                     value={formData.docType}
                     onValueChange={(value) => updateFormData('docType', value)}
                   >
                     <SelectTrigger id="docType" type="button" aria-required="true">
-                      <SelectValue placeholder="Seleccionar" />
+                      <SelectValue placeholder={t('common.select')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="CC">Cédula de Ciudadanía (C.C)</SelectItem>
-                      <SelectItem value="CE">Cédula de Extranjería (C.E)</SelectItem>
+                      <SelectItem value="CC">{t('settings.citizenshipId')}</SelectItem>
+                      <SelectItem value="CE">{t('settings.foreignerId')}</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-600">No se admiten menores de edad (T.I)</p>
+                  <p className="text-xs text-gray-600">{t('auth.minorNotice')}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="docNumber">Número de documento *</Label>
+                  <Label htmlFor="docNumber">{t('settings.documentNumber')} *</Label>
                   <Input
                     id="docNumber"
                     placeholder="1234567890"
@@ -279,19 +279,19 @@ export function RegisterScreen({
                     pattern="[0-9]{1,10}"
                     required
                   />
-                  <p className={`text-xs ${documentError ? 'text-red-600' : 'text-gray-500'}`}>
-                    {documentError || `${formData.docNumber.length}/10 dígitos`}
+                    <p className={`text-xs ${documentError ? 'text-red-600' : 'text-gray-500'}`}>
+                    {documentError || t('auth.documentDigits', { count: formData.docNumber.length })}
                   </p>
                 </div>
               </div>
 
               {/* RF1.1 - Correo electrónico */}
               <div className="space-y-2">
-                <Label htmlFor="email">Correo electrónico *</Label>
+                <Label htmlFor="email">{t('auth.email')} *</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="usuario@ejemplo.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   value={formData.email}
                   onChange={(e) => updateFormData('email', e.target.value)}
                   required
@@ -300,7 +300,7 @@ export function RegisterScreen({
 
               {/* RF1.2 - Contraseña con requisitos */}
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña *</Label>
+                <Label htmlFor="password">{t('auth.password')} *</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -314,7 +314,7 @@ export function RegisterScreen({
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-label={showPassword ? t('common.hide') : t('common.show')}
                     className="absolute right-2 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-gray-500 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-0"
                     style={{
                       border: 'none',
@@ -343,7 +343,7 @@ export function RegisterScreen({
                         ) : (
                           <X className="size-3" />
                         )}
-                        Mínimo 8 caracteres
+                        {t('auth.passwordMinCharacters')}
                       </div>
                       <div
                         className={`flex items-center gap-1 ${passwordValidation.hasUpperCase ? 'text-green-600' : 'text-gray-500'}`}
@@ -353,7 +353,7 @@ export function RegisterScreen({
                         ) : (
                           <X className="size-3" />
                         )}
-                        Al menos una mayúscula
+                        {t('auth.passwordUppercase')}
                       </div>
                       <div
                         className={`flex items-center gap-1 ${passwordValidation.hasLowerCase ? 'text-green-600' : 'text-gray-500'}`}
@@ -363,7 +363,7 @@ export function RegisterScreen({
                         ) : (
                           <X className="size-3" />
                         )}
-                        Al menos una minúscula
+                        {t('auth.passwordLowercase')}
                       </div>
                       <div
                         className={`flex items-center gap-1 ${passwordValidation.hasNumber ? 'text-green-600' : 'text-gray-500'}`}
@@ -373,7 +373,7 @@ export function RegisterScreen({
                         ) : (
                           <X className="size-3" />
                         )}
-                        Al menos un número
+                        {t('auth.passwordNumber')}
                       </div>
                       <div
                         className={`flex items-center gap-1 ${passwordValidation.hasSymbol ? 'text-green-600' : 'text-gray-500'}`}
@@ -383,7 +383,7 @@ export function RegisterScreen({
                         ) : (
                           <X className="size-3" />
                         )}
-                        Al menos un símbolo (!@#$%^&*)
+                        {t('auth.passwordSymbol')}
                       </div>
                     </div>
                   </div>
@@ -391,7 +391,7 @@ export function RegisterScreen({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar contraseña *</Label>
+                <Label htmlFor="confirmPassword">{t('auth.confirmPassword')} *</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -405,7 +405,7 @@ export function RegisterScreen({
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-label={showConfirmPassword ? t('common.hide') : t('common.show')}
                     className="absolute right-2 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-gray-500 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-0"
                     style={{
                       border: 'none',
@@ -422,7 +422,7 @@ export function RegisterScreen({
                   </button>
                 </div>
                 {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                  <p className="text-xs text-red-600">Las contraseñas no coinciden</p>
+                  <p className="text-xs text-red-600">{t('auth.passwordsDoNotMatch')}</p>
                 )}
               </div>
 
@@ -432,7 +432,7 @@ export function RegisterScreen({
                   <Checkbox id="legalConsent" checked={acceptedLegal} disabled />
                   <Label htmlFor="legalConsent" className="text-sm leading-relaxed">
                     <span className="text-red-600">*</span> Acepto los términos y condiciones y la
-                    política de privacidad de HidroSmart.
+                    {t('auth.legalConsentLabel')}
                   </Label>
                 </div>
                 <Button
@@ -442,8 +442,8 @@ export function RegisterScreen({
                   onClick={() => onReviewTerms(formData)}
                 >
                   {acceptedLegal
-                    ? 'Volver a leer términos y condiciones'
-                    : 'Leer términos y condiciones'}
+                    ? t('auth.readTermsAgain')
+                    : t('auth.readTerms')}
                 </Button>
               </div>
 
@@ -451,8 +451,7 @@ export function RegisterScreen({
               <Alert>
                 <AlertCircle className="size-4" />
                 <AlertDescription className="text-sm">
-                  Recibirás un correo de verificación. Si no llega, puedes solicitar un reenvío
-                  desde el flujo de autenticación.
+                  {t('auth.verificationEmailNotice')}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -462,7 +461,7 @@ export function RegisterScreen({
                 className="h-12 w-full rounded-xl text-sm font-semibold shadow-sm"
                 disabled={isSubmitting || !acceptedLegal}
               >
-                {isSubmitting ? 'Creando cuenta...' : 'Registrarse'}
+                {isSubmitting ? t('auth.creatingAccount') : t('auth.register')}
               </Button>
             </CardFooter>
           </form>
@@ -475,38 +474,32 @@ export function RegisterScreen({
             <DialogContent className="max-h-[80dvh] overflow-y-auto sm:max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
-                  {legalDocument === 'terms' ? 'Términos y condiciones' : 'Política de privacidad'}
+                  {legalDocument === 'terms' ? t('auth.termsAndConditions') : t('auth.privacyPolicy')}
                 </DialogTitle>
-                <DialogDescription>HidroSmart · versión local de consulta</DialogDescription>
+                <DialogDescription>{t('auth.localLegalVersion')}</DialogDescription>
               </DialogHeader>
               {legalDocument === 'terms' ? (
                 <div className="space-y-3 text-sm text-gray-700">
                   <p>
-                    HidroSmart permite monitorear el consumo de agua y administrar hogares y
-                    dispositivos autorizados.
+                    {t('auth.termsParagraph1')}
                   </p>
                   <p>
-                    La persona usuaria debe mantener seguras sus credenciales y usar la plataforma
-                    únicamente con hogares y dispositivos sobre los que tenga autorización.
+                    {t('auth.termsParagraph2')}
                   </p>
                   <p>
-                    El acceso puede limitarse ante uso indebido, incumplimiento de seguridad o
-                    requerimientos legales.
+                    {t('auth.termsParagraph3')}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3 text-sm text-gray-700">
                   <p>
-                    HidroSmart trata los datos de cuenta, hogar, dispositivos y consumo para prestar
-                    el servicio y generar información de monitoreo.
+                    {t('auth.privacyParagraph1')}
                   </p>
                   <p>
-                    Los datos se protegen con controles de acceso y se comparten solo cuando sea
-                    necesario para operar el servicio o cumplir obligaciones legales.
+                    {t('auth.privacyParagraph2')}
                   </p>
                   <p>
-                    Puedes solicitar actualización, corrección o eliminación de datos conforme a la
-                    normativa aplicable.
+                    {t('auth.privacyParagraph3')}
                   </p>
                 </div>
               )}

@@ -24,7 +24,6 @@ type RegistrationDraft = {
 type RegistrationLocationState = {
   draft?: RegistrationDraft;
   legalAccepted?: boolean;
-  registrationPending?: boolean;
   registeredEmail?: string;
 };
 
@@ -33,12 +32,12 @@ function LoadingScreen() {
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-100 p-4">
       <div className="text-center">
-        <div className="mx-auto flex size-32 items-center justify-center rounded-2xl bg-blue-600 p-4">
-          <img src={logoImage} alt="HidroSmart Logo" className="size-24 object-contain" />
+        <div className="mx-auto flex size-40 items-center justify-center rounded-2xl bg-blue-600 p-5">
+          <img src={logoImage} alt="HidroSmart Logo" className="size-28 object-contain" />
         </div>
-        <h2 className="mt-4 text-3xl text-blue-900 hidrosmart-logo">{t('app.name')}</h2>
-        <div className="mt-2 flex items-center justify-center gap-2 text-gray-600">
-          <Loader2 className="size-4 animate-spin text-blue-600" aria-hidden="true" />
+        <h2 className="mt-5 text-4xl text-blue-900 hidrosmart-logo">{t('app.name')}</h2>
+        <div className="mt-3 flex items-center justify-center gap-2 text-base text-gray-600">
+          <Loader2 className="size-5 animate-spin text-blue-600" aria-hidden="true" />
           <p>{t('app.loadingSystem')}</p>
         </div>
       </div>
@@ -85,7 +84,6 @@ function LoginRoute() {
   return (
     <LoginScreen
       initialEmail={state.registeredEmail || ''}
-      registrationPending={Boolean(state.registrationPending)}
       onLogin={async (credentials) => {
         await login(credentials);
         navigate('/app', { replace: true });
@@ -109,7 +107,7 @@ function RegisterRoute() {
         const result = await register(payload);
         navigate('/login', {
           replace: true,
-          state: { registrationPending: true, registeredEmail: result.email },
+          state: { registeredEmail: result.email },
         });
       }}
       initialFormData={state.draft || null}
@@ -162,13 +160,14 @@ function AuthenticatedApplication() {
 }
 
 function NotFoundScreen() {
+  const { t } = useTranslation();
   return (
     <main className="min-h-dvh flex items-center justify-center bg-slate-50 p-4">
       <section className="rounded-xl bg-white p-8 text-center shadow">
-        <h1 className="text-2xl font-semibold">Página no encontrada</h1>
-        <p className="mt-2 text-slate-600">La ruta solicitada no existe.</p>
+        <h1 className="text-2xl font-semibold">{t('app.notFoundTitle')}</h1>
+        <p className="mt-2 text-slate-600">{t('app.notFoundDescription')}</p>
         <a className="mt-5 inline-block text-blue-700 hover:underline" href="/app">
-          Volver al panel
+          {t('app.backToDashboard')}
         </a>
       </section>
     </main>
