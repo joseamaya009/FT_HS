@@ -21,7 +21,7 @@ export function LanguageSelector() {
         await userApi.updatePreferences({ language: lang, currency: language.defaultCurrency });
         await refreshSession();
       } catch {
-        toast.error('No fue posible guardar la preferencia de idioma');
+        toast.error(t('settings.languageSaveError'));
         return;
       }
     }

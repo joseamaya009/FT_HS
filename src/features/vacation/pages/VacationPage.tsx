@@ -6,10 +6,12 @@ import { Badge } from '@shared/ui/badge';
 import { Plane } from 'lucide-react';
 import { vacationApi } from '@shared/http/httpClient';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 type Vacation = { active?: boolean; isActive?: boolean; startedAt?: string; endedAt?: string };
 
 export function VacationMode({ homeId }: { homeId?: string }) {
+  const { t } = useTranslation();
   const [vacation, setVacation] = useState<Vacation | null>(null);
   const [startedAt, setStartedAt] = useState('');
   const [endedAt, setEndedAt] = useState('');
@@ -31,7 +33,7 @@ export function VacationMode({ homeId }: { homeId?: string }) {
 
   const save = async () => {
     if (!homeId || !startedAt || !endedAt || startedAt >= endedAt) {
-      toast.error('Selecciona un rango de fechas válido');
+      toast.error(t('vacation.invalidRange'));
       return;
     }
     try {
@@ -42,9 +44,9 @@ export function VacationMode({ homeId }: { homeId?: string }) {
         notifyOnReturn: true,
       });
       setVacation(response.data as Vacation);
-      toast.success('Modo vacaciones activado');
+      toast.success(t('vacation.activated'));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo activar el modo vacaciones');
+      toast.error(error instanceof Error ? error.message : t('vacation.enableError'));
     }
   };
   const disable = async () => {
@@ -54,10 +56,10 @@ export function VacationMode({ homeId }: { homeId?: string }) {
       setVacation(null);
       setStartedAt('');
       setEndedAt('');
-      toast.success('Modo vacaciones desactivado');
+      toast.success(t('vacation.deactivated'));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'No se pudo desactivar el modo vacaciones'
+        error instanceof Error ? error.message : t('vacation.disableError')
       );
     }
   };
@@ -70,18 +72,18 @@ export function VacationMode({ homeId }: { homeId?: string }) {
           <div className="flex items-center gap-3">
             <Plane className="size-6 text-blue-600" />
             <div>
-              <CardTitle>Modo vacaciones</CardTitle>
+              <CardTitle>{t('vacation.title')}</CardTitle>
               <CardDescription>
-                Configuración persistida para el hogar seleccionado.
+                {t('vacation.description')}
               </CardDescription>
             </div>
-            <Badge className="ml-auto">{active ? 'Activo' : 'Inactivo'}</Badge>
+            <Badge className="ml-auto">{active ? t('vacation.active') : t('vacation.inactive')}</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="vacation-start">Fecha de inicio</Label>
+              <Label htmlFor="vacation-start">{t('vacation.startDate')}</Label>
               <input
                 id="vacation-start"
                 type="date"
@@ -91,7 +93,7 @@ export function VacationMode({ homeId }: { homeId?: string }) {
               />
             </div>
             <div>
-              <Label htmlFor="vacation-end">Fecha de fin</Label>
+              <Label htmlFor="vacation-end">{t('vacation.endDate')}</Label>
               <input
                 id="vacation-end"
                 type="date"
@@ -103,16 +105,16 @@ export function VacationMode({ homeId }: { homeId?: string }) {
           </div>
           <div className="flex gap-3">
             <Button onClick={save} disabled={active}>
-              Activar modo vacaciones
+              {t('vacation.enable')}
             </Button>
             <Button variant="outline" onClick={disable} disabled={!active}>
-              Desactivar
+              {t('vacation.disable')}
             </Button>
           </div>
         </CardContent>
       </Card>
       <p className="text-sm text-gray-500">
-        El backend actualmente expone el estado vigente; no se muestra historial ficticio.
+        {t('vacation.backendNotice')}
       </p>
     </div>
   );
