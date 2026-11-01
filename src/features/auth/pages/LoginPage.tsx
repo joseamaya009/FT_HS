@@ -35,7 +35,6 @@ interface LoginScreenProps {
   onPasswordResetComplete: (payload: { token: string; password: string }) => Promise<void>;
   onRegisterClick: () => void;
   initialEmail?: string;
-  registrationPending?: boolean;
 }
 
 export function LoginScreen({
@@ -45,7 +44,6 @@ export function LoginScreen({
   onPasswordResetComplete,
   onRegisterClick,
   initialEmail = '',
-  registrationPending = false,
 }: LoginScreenProps) {
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
@@ -254,12 +252,6 @@ export function LoginScreen({
                   <CardDescription>{t('auth.enterCredentials')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 px-5 sm:px-6">
-                  {registrationPending && (
-                    <Alert>
-                      <AlertCircle className="size-4" />
-                      <AlertDescription>{t('auth.registrationPendingNotice')}</AlertDescription>
-                    </Alert>
-                  )}
                   <div className="space-y-2">
                     <Label htmlFor="email">{t('auth.email')} *</Label>
                     <Input

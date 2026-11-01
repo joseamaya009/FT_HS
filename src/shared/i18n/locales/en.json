@@ -13,7 +13,7 @@
     "secure": "100% secure"
   },
   "auth": {
-    "registrationPendingNotice": "Account created. Check your email and confirm the link before signing in.",
+    "registrationPendingNotice": "Account created successfully. Check your email and confirm the link to activate your account before signing in.",
     "login": "Sign In",
     "register": "Register",
     "logout": "Sign Out",
