@@ -7,7 +7,7 @@ import { Toaster } from '@shared/ui/sonner';
 import { Loader2 } from 'lucide-react';
 import { FloatingLanguageSwitcher } from '@shared/ui/FloatingLanguageSwitcher';
 import { useTranslation } from 'react-i18next';
-import logoImage from '../imports/aaa-Photoroom-2.png';
+import logoImage from '../imports/aaa-Photoroom-1.png';
 import { useAuth } from '@app/providers/AuthProvider';
 import { ActiveHomeProvider } from '@app/providers/ActiveHomeProvider';
 import { VerifyEmailPage } from '@features/auth/pages/VerifyEmailPage';

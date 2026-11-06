@@ -17,7 +17,7 @@ import {
   Loader2,
   Lightbulb,
 } from 'lucide-react';
-import logoImage from '@/imports/aaa-Photoroom-2.png';
+import logoImage from '@/imports/aaa-Photoroom-1.png';
 import { Button } from '@shared/ui/button';
 import { Badge } from '@shared/ui/badge';
 import { LazyViewErrorBoundary } from '@shared/ui/LazyViewErrorBoundary';
