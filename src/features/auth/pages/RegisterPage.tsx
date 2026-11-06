@@ -32,7 +32,7 @@ import {
   normalizeDocumentNumber,
   passwordValidation as getPasswordValidation,
 } from '@shared/lib/validators';
-import logoImage from '@/imports/aaa-Photoroom-1.png';
+import logoImage from '@/imports/aaa-Photoroom-2.png';
 
 interface RegisterScreenProps {
   onRegister: (payload: {

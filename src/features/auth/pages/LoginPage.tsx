@@ -26,7 +26,7 @@ import { Eye, EyeOff, AlertCircle, Info, CheckCircle2, Circle } from 'lucide-rea
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { toast } from 'sonner';
 import { emailPattern, isValidPassword } from '@shared/lib/validators';
-import logoImage from '@/imports/aaa-Photoroom-1.png';
+import logoImage from '@/imports/aaa-Photoroom-2.png';
 
 interface LoginScreenProps {
   onLogin: (credentials: { login: string; password: string }) => Promise<void>;
